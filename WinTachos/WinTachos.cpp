@@ -61,12 +61,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 //  関数: MyRegisterClass()
 //  用途: ウィンドウ クラスの登録
-//  コメント:
-//    この関数およびその使用はこのコードを Windows 95 で先に追加された
-//    'RegisterClassEx' 関数と Win32 システムの互換性を保持したい場合に
-//    のみ必要となります。アプリケーションが、アプリケーションに関連付け
-//    られたスモール アイコンを取得できるよう、この関数を呼び出すことは
-//    重要です。
 ATOM MyRegisterClass( HINSTANCE hInstance )
 {
 	WNDCLASSEX wcex;
@@ -233,12 +227,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			// メニュー選択の解析:
 			switch( wmId ) 
 			{
-				/*case IDM_ABOUT:
-					DialogBox(hInst, (LPCTSTR)IDD_ABOUTBOX, hWnd, (DLGPROC)AboutDlgProc);
-					break;
-				case IDM_EXIT:
-					DestroyWindow( hWnd );
-					break;*/
 				case ID_MENUITEM_SETTING:
 					DialogBox(hInst, (LPCTSTR)IDD_SETTING, hWnd, (DLGPROC)SettingDlgProc);
 					break;
@@ -319,8 +307,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				SetInfoToReg(hParentKey);
 				RegCloseKey(hParentKey);
 
+				KillTimer(hWnd, TIMERID);
+
 				// タスクトレイアイコンの削除
 				Shell_NotifyIcon(NIM_DELETE, m_lpni);
+				delete m_lpni;
+				m_lpni = NULL;
+
+				delete[] m_NeedleInfo;
+				m_NeedleInfo = NULL;
 
 				PostQuitMessage( 0 );
 				break;
@@ -791,7 +786,6 @@ void ShowMyBMP(HWND hWnd, HDC hdc)
 	hmdc = CreateCompatibleDC(hdc);
 	SelectObject(hmdc, hBitmap);
 	BitBlt(hdc, 0, 0, BMP_W, BMP_H, hmdc, 0, 0, SRCCOPY);
-	StretchBlt(hdc, 0, BMP_H, BMP_W / 2, BMP_H / 2, hmdc, 0, 0, BMP_W, BMP_H, SRCCOPY);
 	DeleteDC(hmdc);
 	DeleteObject(hBitmap);
 	return;
