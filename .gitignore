@@ -1,0 +1,26 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.ncb
+*.sdf
+*.opendb
+*.db
+ipch/
+
+# Build output
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+
+# Resource editor binary cache
+*.aps
+
+# Compiled resources
+*.res

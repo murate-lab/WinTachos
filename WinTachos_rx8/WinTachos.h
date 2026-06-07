@@ -33,24 +33,6 @@
 	#define NEEDLE_COLOR		RGB(255,0,0)		// メーターの針の色
 #endif
 
-// グローバル変数:
-HINSTANCE		hInst;							// 現在のインスタンス
-TCHAR			szTitle[MAX_LOADSTRING];		// タイトル バー テキスト
-TCHAR			szWindowClass[MAX_LOADSTRING];	// タイトル バー テキスト
-HRGN			m_hBaseRgn;						// メーターのベースのリージョン
-float			m_fSpeed;						// スピード
-float			m_fSpeedDisp;					// スピード表示値
-float			m_fSpeedLog[LOGMAX];			// スピード過去の値
-float			m_fTacho;						// 回転数
-float			m_fTachoDisp;					// 回転数表示値
-float			m_fTachoLog[LOGMAX];			// 回転数過去の値
-int				m_iLogPos;						// 現在の記録個所
-PNOTIFYICONDATA	m_lpni;							// タスクトレイアイコン
-WNDPROC			oldLinkProc1 = NULL;			// ＵＲＬのリンク
-WNDPROC			oldLinkProc2 = NULL;			// メールのリンク
-HFONT			hFontLink;
-HCURSOR			hCurHand;						// リンクカーソル
-
 class		CWTSetting {					// 設定情報クラス
 public:
 	DWORD		dwWindowPosX;				// ウィンドウの位置Ｘ
@@ -61,7 +43,7 @@ public:
 	UINT		uiResponse;					// レスポンス
 }			m_SettingInfo;
 
-class		CWTNeddle {						// 針情報クラス
+class		CWTNeedle {						// 針情報クラス
 public:
 	POINT		poCenter;					// 中心座標
 	int			uiCenterR;					// 中心軸の半径

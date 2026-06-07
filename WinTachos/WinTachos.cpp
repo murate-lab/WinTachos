@@ -4,6 +4,23 @@
 #include "stdafx.h"
 #include "WinTachos.h"
 
+// グローバル変数:
+HINSTANCE		hInst;							// 現在のインスタンス
+TCHAR			szTitle[MAX_LOADSTRING];		// タイトル バー テキスト
+TCHAR			szWindowClass[MAX_LOADSTRING];	// タイトル バー テキスト
+HRGN			m_hBaseRgn;						// メーターのベースのリージョン
+float			m_fSpeed;						// スピード
+float			m_fSpeedDisp;					// スピード表示値
+float			m_fSpeedLog[LOGMAX];			// スピード過去の値
+float			m_fTacho;						// 回転数
+float			m_fTachoDisp;					// 回転数表示値
+float			m_fTachoLog[LOGMAX];			// 回転数過去の値
+int				m_iLogPos;						// 現在の記録個所
+PNOTIFYICONDATA	m_lpni;							// タスクトレイアイコン
+WNDPROC			oldLinkProc1 = NULL;			// ＵＲＬのリンク
+WNDPROC			oldLinkProc2 = NULL;			// メールのリンク
+HFONT			hFontLink;
+HCURSOR			hCurHand;						// リンクカーソル
 
 int APIENTRY WinMain(HINSTANCE hInstance,
 					 HINSTANCE hPrevInstance,
@@ -83,7 +100,7 @@ BOOL InitInstance( HINSTANCE hInstance, int nCmdShow )
 	hInst = hInstance; // グローバル変数にインスタンス ハンドルを保存します
 
 	// クラス生成
-	m_NeedleInfo = new CWTNeddle[2];
+	m_NeedleInfo = new CWTNeedle[2];
 
 	// メーター値初期化
 	m_fSpeed = 0.0f;
@@ -897,7 +914,7 @@ void DrawNeedle(HDC hDC)
 		pNeedle[1].y = m_NeedleInfo[i].poCenter.y - (long)(m_NeedleInfo[i].uiCenterR * sin(fAngleC_rad));
 
 		// スピードメーターの針のポリゴンの座標計算（淵）
-/*		pNeedle[2].x = m_NeedleInfo[i].poCenter.x + (long)(4.0f * cos(fAngleR_rad));
+		pNeedle[2].x = m_NeedleInfo[i].poCenter.x + (long)(4.0f * cos(fAngleR_rad));
 		pNeedle[2].y = m_NeedleInfo[i].poCenter.y - (long)(4.0f * sin(fAngleR_rad));
 		pNeedle[3].x = m_NeedleInfo[i].poCenter.x + (long)(4.0f * cos(fAngleL_rad));
 		pNeedle[3].y = m_NeedleInfo[i].poCenter.y - (long)(4.0f * sin(fAngleL_rad));
@@ -908,15 +925,15 @@ void DrawNeedle(HDC hDC)
 
 		// 針描画（淵）
 		pen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
-		oldpen = SelectObject(hDC, pen);
+		oldpen = (HPEN)SelectObject(hDC, pen);
 		brush = CreateSolidBrush(RGB(0, 0, 0));
-		oldbrush = SelectObject(hDC, brush);
+		oldbrush = (HBRUSH)SelectObject(hDC, brush);
 		Polygon(hDC, &pNeedle[2], 4);
 		SelectObject(hDC, oldpen);
 		SelectObject(hDC, oldbrush);
 		DeleteObject(pen);
 		DeleteObject(brush);
-*/ // Win9xでゴミが出るため、暫定措置としてコメントアウト
+
 		// スピードメーターの針のポリゴンの座標計算（中身）
 		pNeedle[2].x = pNeedle[1].x + (long)(fNeedleWidth * cos(fAngleR_rad));
 		pNeedle[2].y = pNeedle[1].y - (long)(fNeedleWidth * sin(fAngleR_rad));
@@ -927,7 +944,7 @@ void DrawNeedle(HDC hDC)
 		pNeedle[5].x = pNeedle[0].x + (long)(1.0f * cos(fAngleR_rad));
 		pNeedle[5].y = pNeedle[0].y - (long)(1.0f * sin(fAngleR_rad));
 
-		// background polygon so needle is visible on any desktop color
+		// スピードメーターの針の背景ポリゴン
 		POINT bgNeedle[4];
 		float bgW = fNeedleWidth + 2.0f;
 		bgNeedle[0].x = pNeedle[1].x + (long)(bgW * cos(fAngleR_rad));
@@ -960,7 +977,7 @@ void DrawNeedle(HDC hDC)
 		DeleteObject(brush);
 
 		// メーターの針の先端の座標計算（反対側）
-/*		pNeedle[0].x = m_NeedleInfo[i].poCenter.x + (long)(-m_NeedleInfo[i].uiLengB * cos(fAngleC_rad));
+		pNeedle[0].x = m_NeedleInfo[i].poCenter.x + (long)(-m_NeedleInfo[i].uiLengB * cos(fAngleC_rad));
 		pNeedle[0].y = m_NeedleInfo[i].poCenter.y - (long)(-m_NeedleInfo[i].uiLengB * sin(fAngleC_rad));
 		// メーターの針のポリゴンの座標計算（反対側）
 		pNeedle[2].x = m_NeedleInfo[i].poCenter.x + (long)(4.0f * cos(fAngleL_rad));
@@ -974,15 +991,14 @@ void DrawNeedle(HDC hDC)
 	
 		// 針描画（反対側）
 		pen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
-		oldpen = SelectObject(hDC, pen);
+		oldpen = (HPEN)SelectObject(hDC, pen);
 		brush = CreateSolidBrush(RGB(0, 0, 0));
-		oldbrush = SelectObject(hDC, brush);
+		oldbrush = (HBRUSH)SelectObject(hDC, brush);
 		Polygon(hDC, &pNeedle[2], 4);
 		SelectObject(hDC, oldpen);
 		SelectObject(hDC, oldbrush);
 		DeleteObject(pen);
 		DeleteObject(brush);
-*/ // Win9xでゴミが出るため、暫定措置としてコメントアウト
 	}
 
 }

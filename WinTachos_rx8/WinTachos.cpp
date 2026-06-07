@@ -4,6 +4,23 @@
 #include "stdafx.h"
 #include "WinTachos.h"
 
+// グローバル変数:
+HINSTANCE		hInst;							// 現在のインスタンス
+TCHAR			szTitle[MAX_LOADSTRING];		// タイトル バー テキスト
+TCHAR			szWindowClass[MAX_LOADSTRING];	// タイトル バー テキスト
+HRGN			m_hBaseRgn;						// メーターのベースのリージョン
+float			m_fSpeed;						// スピード
+float			m_fSpeedDisp;					// スピード表示値
+float			m_fSpeedLog[LOGMAX];			// スピード過去の値
+float			m_fTacho;						// 回転数
+float			m_fTachoDisp;					// 回転数表示値
+float			m_fTachoLog[LOGMAX];			// 回転数過去の値
+int				m_iLogPos;						// 現在の記録個所
+PNOTIFYICONDATA	m_lpni;							// タスクトレイアイコン
+WNDPROC			oldLinkProc1 = NULL;			// ＵＲＬのリンク
+WNDPROC			oldLinkProc2 = NULL;			// メールのリンク
+HFONT			hFontLink;
+HCURSOR			hCurHand;						// リンクカーソル
 
 int APIENTRY WinMain(HINSTANCE hInstance,
 					 HINSTANCE hPrevInstance,
@@ -83,7 +100,7 @@ BOOL InitInstance( HINSTANCE hInstance, int nCmdShow )
 	hInst = hInstance; // グローバル変数にインスタンス ハンドルを保存します
 
 	// クラス生成
-	m_NeedleInfo = new CWTNeddle[2];
+	m_NeedleInfo = new CWTNeedle[2];
 
 	// メーター値初期化
 	m_fSpeed = 0.0f;
