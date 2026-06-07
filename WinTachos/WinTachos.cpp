@@ -171,7 +171,7 @@ BOOL InitInstance( HINSTANCE hInstance, int nCmdShow )
 	ChangeTopmost(hWnd);
 
 	// タスクバーを表示しない
-	SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_TOOLWINDOW | WS_EX_LAYERED);
+	SetWindowLongPtr(hWnd, GWL_EXSTYLE, WS_EX_TOOLWINDOW | WS_EX_LAYERED);
 	SetLayeredWindowAttributes(hWnd, COLORKEY, 0, LWA_COLORKEY);
 
 	// タスクトレイにアイコンを表示
@@ -201,8 +201,9 @@ BOOL InitInstance( HINSTANCE hInstance, int nCmdShow )
 		case VER_PLATFORM_WIN32s:
 			//MessageBox(NULL, "Win32s", "Platform", MB_OK);
 			MessageBox(NULL, "サポート外のＯＳです", "WinTachos", MB_OK);
-			exit(-1);
-			break;
+			Shell_NotifyIcon(NIM_DELETE, m_lpni);
+			delete m_lpni; m_lpni = nullptr;
+			return FALSE;
 		case VER_PLATFORM_WIN32_WINDOWS:
 			//MessageBox(NULL, "Windows95", "Platform", MB_OK);
 			//GetCPUUsageStart_95();
@@ -215,39 +216,36 @@ BOOL InitInstance( HINSTANCE hInstance, int nCmdShow )
 			m_hDLL = ::LoadLibrary("Pdh.dll");
 			if (!m_hDLL) {	// DLLが見つからない
 				MessageBox(NULL, "Pdh.dllが見つかりませんでした", "WinTachos", MB_OK);
-				exit(-1);
-			} else {	// DLLが見つかった
-				pPdhOpenQuery = (PDH_STATUS (FAR WINAPI *)(LPVOID, DWORD, HQUERY*))GetProcAddress(m_hDLL, "PdhOpenQuery");
-				if (!pPdhOpenQuery) {
-					MessageBox(NULL, "関数ポインタの取得に失敗しました(PdhOpenQuery)", "WinTachos", MB_OK);
-					exit(-1);
-				}
-				pPdhAddCounter = (PDH_STATUS (FAR WINAPI *)(HQUERY, LPCTSTR, DWORD, HCOUNTER*))GetProcAddress(m_hDLL, "PdhAddCounterA");
-				if (!pPdhAddCounter) {
-					MessageBox(NULL, "関数ポインタの取得に失敗しました(PdhAddCounterA)", "WinTachos", MB_OK);
-					exit(-1);
-				}
-				pPdhCollectQueryData = (PDH_STATUS (FAR WINAPI *)(HQUERY))GetProcAddress(m_hDLL, "PdhCollectQueryData");
-				if (!pPdhCollectQueryData) {
-					MessageBox(NULL, "関数ポインタの取得に失敗しました(PdhCollectQueryData)", "WinTachos", MB_OK);
-					exit(-1);
-				}
-				pPdhGetFormattedCounterValue = (PDH_STATUS (FAR WINAPI *)(HCOUNTER, DWORD, LPDWORD, PPDH_FMT_COUNTERVALUE))GetProcAddress(m_hDLL, "PdhGetFormattedCounterValue");
-				if (!pPdhGetFormattedCounterValue) {
-					MessageBox(NULL, "関数ポインタの取得に失敗しました(PdhGetFormattedCounterValue)", "WinTachos", MB_OK);
-					exit(-1);
-				}
-				pPdhCloseQuery = (PDH_STATUS (FAR WINAPI *)(HQUERY))GetProcAddress(m_hDLL, "PdhCloseQuery");
-				if (!pPdhCloseQuery) {
-					MessageBox(NULL, "関数ポインタの取得に失敗しました(PdhCloseQuery)", "WinTachos", MB_OK);
-					exit(-1);
-				}
+				Shell_NotifyIcon(NIM_DELETE, m_lpni);
+				delete m_lpni; m_lpni = nullptr;
+				return FALSE;
+			}
+			// DLLが見つかった：関数ポインタを取得
+			pPdhOpenQuery = (PDH_STATUS (FAR WINAPI *)(LPVOID, DWORD, HQUERY*))GetProcAddress(m_hDLL, "PdhOpenQuery");
+			pPdhAddCounter = (PDH_STATUS (FAR WINAPI *)(HQUERY, LPCTSTR, DWORD, HCOUNTER*))GetProcAddress(m_hDLL, "PdhAddCounterA");
+			pPdhCollectQueryData = (PDH_STATUS (FAR WINAPI *)(HQUERY))GetProcAddress(m_hDLL, "PdhCollectQueryData");
+			pPdhGetFormattedCounterValue = (PDH_STATUS (FAR WINAPI *)(HCOUNTER, DWORD, LPDWORD, PPDH_FMT_COUNTERVALUE))GetProcAddress(m_hDLL, "PdhGetFormattedCounterValue");
+			pPdhCloseQuery = (PDH_STATUS (FAR WINAPI *)(HQUERY))GetProcAddress(m_hDLL, "PdhCloseQuery");
+			if (!pPdhOpenQuery || !pPdhAddCounter || !pPdhCollectQueryData ||
+				!pPdhGetFormattedCounterValue || !pPdhCloseQuery) {
+				const char* failedFn = !pPdhOpenQuery ? "PdhOpenQuery" :
+					!pPdhAddCounter ? "PdhAddCounterA" :
+					!pPdhCollectQueryData ? "PdhCollectQueryData" :
+					!pPdhGetFormattedCounterValue ? "PdhGetFormattedCounterValue" : "PdhCloseQuery";
+				char msg[100];
+				sprintf_s(msg, sizeof(msg), "関数ポインタの取得に失敗しました(%s)", failedFn);
+				MessageBox(NULL, msg, "WinTachos", MB_OK);
+				FreeLibrary(m_hDLL); m_hDLL = nullptr;
+				Shell_NotifyIcon(NIM_DELETE, m_lpni);
+				delete m_lpni; m_lpni = nullptr;
+				return FALSE;
 			}
 			break;
 		default:
 			MessageBox(NULL, "サポート外のＯＳです", "WinTachos", MB_OK);
-			exit(-1);
-			break;
+			Shell_NotifyIcon(NIM_DELETE, m_lpni);
+			delete m_lpni; m_lpni = nullptr;
+			return FALSE;
 	}
 
 	// ウィンドウ表示
@@ -309,7 +307,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					break;
 				case ID_MENUITEM_EXIT:
 					DestroyWindow( hWnd );
-					exit(-1);
 					break;
 				default:
 				   return DefWindowProc( hWnd, message, wParam, lParam );
@@ -404,15 +401,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				m_SettingInfo.dwWindowPosX = ((WINDOWPOS*)lParam)->x;
 				m_SettingInfo.dwWindowPosY = ((WINDOWPOS*)lParam)->y;
-
-				// レジストリ更新
-				LONG lResult;
-				HKEY hParentKey;
-				lResult = RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\MurateLab\\WinTachos",
-					NULL,KEY_WRITE, &hParentKey);
-				SetInfoToReg(hParentKey);
-				RegCloseKey(hParentKey);
-
 				break;
 			}
 		default:
@@ -508,10 +496,10 @@ LRESULT CALLBACK AboutDlgProc( HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				SendDlgItemMessage(hDlg, IDC_STATIC_MAIL, WM_SETFONT, (WPARAM)hFontLink, 0);
 
 				//サブクラスハンドラの登録
-				oldLinkProc1 = (WNDPROC)GetWindowLong(GetDlgItem(hDlg, IDC_STATIC_URL),GWL_WNDPROC);
-				SetWindowLong(GetDlgItem(hDlg, IDC_STATIC_URL), GWL_WNDPROC,(LONG)linkProc1);
-				oldLinkProc2 = (WNDPROC)GetWindowLong(GetDlgItem(hDlg, IDC_STATIC_MAIL),GWL_WNDPROC);
-				SetWindowLong(GetDlgItem(hDlg, IDC_STATIC_MAIL),GWL_WNDPROC,(LONG)linkProc2);
+				oldLinkProc1 = (WNDPROC)GetWindowLongPtr(GetDlgItem(hDlg, IDC_STATIC_URL), GWLP_WNDPROC);
+				SetWindowLongPtr(GetDlgItem(hDlg, IDC_STATIC_URL), GWLP_WNDPROC, (LONG_PTR)linkProc1);
+				oldLinkProc2 = (WNDPROC)GetWindowLongPtr(GetDlgItem(hDlg, IDC_STATIC_MAIL), GWLP_WNDPROC);
+				SetWindowLongPtr(GetDlgItem(hDlg, IDC_STATIC_MAIL), GWLP_WNDPROC, (LONG_PTR)linkProc2);
 
 				// バージョンをセット
 				sprintf_s(cWork, sizeof(cWork), "WinTachos Version %1.2f", (float)VERSION);
@@ -818,7 +806,7 @@ void ShowMyBMP(HWND hWnd, HDC hdc)
 	HINSTANCE hInst;
 	int BMP_W, BMP_H;
 
-	hInst = (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE);
+	hInst = (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE);
 	switch (m_SettingInfo.uiSize) {
 	case 0:
 		hBitmap = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_METER_H));
@@ -854,13 +842,10 @@ void ShowMyBMP(HWND hWnd, HDC hdc)
 void CalcSpTc(void)
 {
 	// メモリ使用量取得
-	LPMEMORYSTATUS lpmstMemStat;	// メモリ状態構造体
-	lpmstMemStat = new MEMORYSTATUS;
-	lpmstMemStat->dwLength = sizeof(MEMORYSTATUS);
-	GlobalMemoryStatus(lpmstMemStat);
-	m_fSpeed = (float)lpmstMemStat->dwMemoryLoad;	// NT4.0対応のため以下コードに変更
-//	m_fSpeed = 100.0f - (((float)lpmstMemStat->dwAvailPhys / (float)lpmstMemStat->dwTotalPhys) * 100.0f);
-	delete lpmstMemStat;
+	MEMORYSTATUSEX mstMemStat;
+	mstMemStat.dwLength = sizeof(MEMORYSTATUSEX);
+	GlobalMemoryStatusEx(&mstMemStat);
+	m_fSpeed = (float)mstMemStat.dwMemoryLoad;
 
 	// ＣＰＵ使用率取得
 	if (m_OS == VER_PLATFORM_WIN32_WINDOWS) {
@@ -938,6 +923,7 @@ void UpdateSize(HWND hWnd)
 	}
 
 	// ビットマップからリージョンを作成
+	if (m_hBaseRgn) DeleteObject(m_hBaseRgn);
 	m_hBaseRgn = CreateRgnFromBmp(hBitmap, RGB(0, 0, 0));	// 透過色：黒
 	// ビットマップを削除
 	DeleteObject(hBitmap);
@@ -1067,7 +1053,7 @@ void DrawNeedle(HDC hDC)
 */ // Win9xでゴミが出るため、暫定措置としてコメントアウト
 	}
 
-	delete pNeedle;
+	delete[] pNeedle;
 }
 
 void DrawCenterCircle(HDC hDC)
@@ -1273,7 +1259,7 @@ void PdhStatusCheck(int i, PDH_STATUS pdhStatus)
 
 		MessageBox(NULL, errorMes, "WinTachos", MB_OK);
 
-		delete errorMes;
+		delete[] errorMes;
 	}
 }
 
