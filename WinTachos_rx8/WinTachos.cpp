@@ -4,7 +4,6 @@
 #include "stdafx.h"
 #include "WinTachos.h"
 
-#define OS_WINDOWS7
 
 int APIENTRY WinMain(HINSTANCE hInstance,
 					 HINSTANCE hPrevInstance,
@@ -191,63 +190,6 @@ BOOL InitInstance( HINSTANCE hInstance, int nCmdShow )
 	
 	Shell_NotifyIcon(NIM_ADD, m_lpni);
 
-	// ＯＳ種別取得
-	OSVERSIONINFO osv;
-	osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-
-	GetVersionEx(&osv);
-	m_OS = osv.dwPlatformId;
-	switch (osv.dwPlatformId) {
-		case VER_PLATFORM_WIN32s:
-			//MessageBox(NULL, "Win32s", "Platform", MB_OK);
-			MessageBox(NULL, "サポート外のＯＳです", "WinTachos", MB_OK);
-			Shell_NotifyIcon(NIM_DELETE, m_lpni);
-			delete m_lpni; m_lpni = nullptr;
-			return FALSE;
-		case VER_PLATFORM_WIN32_WINDOWS:
-			//MessageBox(NULL, "Windows95", "Platform", MB_OK);
-			//GetCPUUsageStart_95();
-			//MessageBox(NULL, "サポート外のＯＳです", "WinTachos", MB_OK);
-			//MessageBox(NULL, "Windows95,98,Meでは針の表示でゴミが残ります。\n原因は調査中です。", "WinTachos Ver1.20", MB_OK);
-			//exit(-1);
-			break;
-		case VER_PLATFORM_WIN32_NT:
-			//MessageBox(NULL, "WindowsNT", "Platform", MB_OK);
-			m_hDLL = ::LoadLibrary("Pdh.dll");
-			if (!m_hDLL) {	// DLLが見つからない
-				MessageBox(NULL, "Pdh.dllが見つかりませんでした", "WinTachos", MB_OK);
-				Shell_NotifyIcon(NIM_DELETE, m_lpni);
-				delete m_lpni; m_lpni = nullptr;
-				return FALSE;
-			}
-			// DLLが見つかった：関数ポインタを取得
-			pPdhOpenQuery = (PDH_STATUS (FAR WINAPI *)(LPVOID, DWORD, HQUERY*))GetProcAddress(m_hDLL, "PdhOpenQuery");
-			pPdhAddCounter = (PDH_STATUS (FAR WINAPI *)(HQUERY, LPCTSTR, DWORD, HCOUNTER*))GetProcAddress(m_hDLL, "PdhAddCounterA");
-			pPdhCollectQueryData = (PDH_STATUS (FAR WINAPI *)(HQUERY))GetProcAddress(m_hDLL, "PdhCollectQueryData");
-			pPdhGetFormattedCounterValue = (PDH_STATUS (FAR WINAPI *)(HCOUNTER, DWORD, LPDWORD, PPDH_FMT_COUNTERVALUE))GetProcAddress(m_hDLL, "PdhGetFormattedCounterValue");
-			pPdhCloseQuery = (PDH_STATUS (FAR WINAPI *)(HQUERY))GetProcAddress(m_hDLL, "PdhCloseQuery");
-			if (!pPdhOpenQuery || !pPdhAddCounter || !pPdhCollectQueryData ||
-				!pPdhGetFormattedCounterValue || !pPdhCloseQuery) {
-				const char* failedFn = !pPdhOpenQuery ? "PdhOpenQuery" :
-					!pPdhAddCounter ? "PdhAddCounterA" :
-					!pPdhCollectQueryData ? "PdhCollectQueryData" :
-					!pPdhGetFormattedCounterValue ? "PdhGetFormattedCounterValue" : "PdhCloseQuery";
-				char msg[100];
-				sprintf_s(msg, sizeof(msg), "関数ポインタの取得に失敗しました(%s)", failedFn);
-				MessageBox(NULL, msg, "WinTachos", MB_OK);
-				FreeLibrary(m_hDLL); m_hDLL = nullptr;
-				Shell_NotifyIcon(NIM_DELETE, m_lpni);
-				delete m_lpni; m_lpni = nullptr;
-				return FALSE;
-			}
-			break;
-		default:
-			MessageBox(NULL, "サポート外のＯＳです", "WinTachos", MB_OK);
-			Shell_NotifyIcon(NIM_DELETE, m_lpni);
-			delete m_lpni; m_lpni = nullptr;
-			return FALSE;
-	}
-
 	// ウィンドウ表示
 	ShowWindow( hWnd, nCmdShow );
 	UpdateWindow( hWnd );
@@ -353,9 +295,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				LONG lResult;
 				HKEY hParentKey;
-
-				// DLLの解放
-				FreeLibrary(m_hDLL);
 
 				// 現在のウィンドウの位置，各種設定をレジストリに保存
 				lResult = RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\MurateLab\\WinTachos_rx8",
@@ -849,11 +788,7 @@ void CalcSpTc(void)
 	m_fSpeed = (float)mstMemStat.dwMemoryLoad;
 
 	// ＣＰＵ使用率取得
-	if (m_OS == VER_PLATFORM_WIN32_WINDOWS) {
-		m_fTacho = (float)GetCPUUsage_95();
-	} else if (m_OS == VER_PLATFORM_WIN32_NT) {
-		m_fTacho = (float)GetCPUUsage_NT();
-	}
+	m_fTacho = (float)GetCPUUsage_NT();
 
 	// 過去の値を記録
 	m_fSpeedLog[m_iLogPos] = m_fSpeed;
@@ -1130,113 +1065,36 @@ void ChangeTopmost(HWND hWnd)
 	SetWindowPos(hWnd, hWndInsertAfter, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 }
 
-int GetCPUUsage_95()
-{	// CPU使用率取得（Windows95,98）
-	HKEY hKey;
-	DWORD dwType=REG_DWORD;
-	DWORD dw=4;
-	DWORD dwDust;
-	char *pszRegKey="KERNEL\\CPUUsage";
-	int nPer;
-
-	::RegOpenKeyEx(HKEY_DYN_DATA,"PerfStats\\StartStat",0,KEY_READ,&hKey);
-	::RegQueryValueEx(hKey,pszRegKey,0L,&dwType,(unsigned char *)&dwDust,&dw);
-	::RegCloseKey(hKey);
-
-	::RegOpenKeyEx(HKEY_DYN_DATA,"PerfStats\\StatData",0,KEY_READ,&hKey);
-	::RegQueryValueEx(hKey,pszRegKey,0L,&dwType,(unsigned char *)&nPer,&dw);
-	::RegCloseKey(hKey);
-
-	return nPer;
-}
-
 double GetCPUUsage_NT()
 {
-#if 1
 	static HQUERY hQuery = NULL;
 	static HCOUNTER hCounter = NULL;
 	PDH_FMT_COUNTERVALUE FmtValue;
-	double dResult = 0.0f;
+	double dResult = 0.0;
 	PDH_STATUS pdhStatus;
 
 	if (hQuery == NULL) {	// 初回実行時
-		pdhStatus = (*pPdhOpenQuery)(NULL, 0, &hQuery);
+		pdhStatus = PdhOpenQuery(NULL, 0, &hQuery);
 		PdhStatusCheck(1, pdhStatus);
-
-#ifdef OS_WINDOWS7
-		pdhStatus = (*pPdhAddCounter)(hQuery, "\\Processor Information(_Total)\\% Processor Time", 0, &hCounter);
-#else
-		pdhStatus = (*pPdhAddCounter)(hQuery, "\\Processor(_Total)\\% Processor Time", 0, &hCounter);
-#endif
+		pdhStatus = PdhAddCounter(hQuery, "\\Processor Information(_Total)\\% Processor Time", 0, &hCounter);
 		PdhStatusCheck(2, pdhStatus);
-
-		pdhStatus = (*pPdhCollectQueryData)(hQuery);
+		pdhStatus = PdhCollectQueryData(hQuery);
 		PdhStatusCheck(3, pdhStatus);
 	} else {	// ２回目以降
-		pdhStatus = (*pPdhCollectQueryData)(hQuery);
+		pdhStatus = PdhCollectQueryData(hQuery);
 		PdhStatusCheck(4, pdhStatus);
-
-		pdhStatus = (*pPdhGetFormattedCounterValue)(hCounter, PDH_FMT_DOUBLE, NULL, &FmtValue);
+		pdhStatus = PdhGetFormattedCounterValue(hCounter, PDH_FMT_DOUBLE, NULL, &FmtValue);
 		PdhStatusCheck(5, pdhStatus);
-
 		dResult = FmtValue.doubleValue;
-
-		pdhStatus = (*pPdhCloseQuery)(hQuery);
+		pdhStatus = PdhCloseQuery(hQuery);
 		PdhStatusCheck(6, pdhStatus);
-
-		pdhStatus = (*pPdhOpenQuery)(NULL, 0, &hQuery);
+		pdhStatus = PdhOpenQuery(NULL, 0, &hQuery);
 		PdhStatusCheck(7, pdhStatus);
-
-#ifdef OS_WINDOWS7
-		pdhStatus = (*pPdhAddCounter)(hQuery, "\\Processor Information(_Total)\\% Processor Time", 0, &hCounter);
-#else
-		pdhStatus = (*pPdhAddCounter)(hQuery, "\\Processor(_Total)\\% Processor Time", 0, &hCounter);
-#endif
+		pdhStatus = PdhAddCounter(hQuery, "\\Processor Information(_Total)\\% Processor Time", 0, &hCounter);
 		PdhStatusCheck(8, pdhStatus);
-
-		pdhStatus = (*pPdhCollectQueryData)(hQuery);
+		pdhStatus = PdhCollectQueryData(hQuery);
 		PdhStatusCheck(9, pdhStatus);
 	}
-#endif
-
-#if 0	// PDHステータスエラーが出る環境用
-	static HQUERY hQuery = NULL;
-	static HCOUNTER hCounter = NULL;
-	PDH_FMT_COUNTERVALUE FmtValue;
-	double dResult = 0.0f;
-	PDH_STATUS pdhStatus;
-
-	if (hQuery == NULL) {	// 初回実行時
-		pdhStatus = (*pPdhOpenQuery)(NULL, 0, &hQuery);
-		PdhStatusCheck(1, pdhStatus);
-
-		pdhStatus = (*pPdhAddCounter)(hQuery, "\\Process(Idle)\\% Processor Time", 0, &hCounter);
-		PdhStatusCheck(2, pdhStatus);
-
-		pdhStatus = (*pPdhCollectQueryData)(hQuery);
-		PdhStatusCheck(3, pdhStatus);
-	} else {	// ２回目以降
-		pdhStatus = (*pPdhCollectQueryData)(hQuery);
-		PdhStatusCheck(4, pdhStatus);
-
-		pdhStatus = (*pPdhGetFormattedCounterValue)(hCounter, PDH_FMT_DOUBLE, NULL, &FmtValue);
-		PdhStatusCheck(5, pdhStatus);
-
-		dResult = 100.0f - FmtValue.doubleValue;
-
-		pdhStatus = (*pPdhCloseQuery)(hQuery);
-		PdhStatusCheck(6, pdhStatus);
-
-		pdhStatus = (*pPdhOpenQuery)(NULL, 0, &hQuery);
-		PdhStatusCheck(7, pdhStatus);
-
-		pdhStatus = (*pPdhAddCounter)(hQuery, "\\Process(Idle)\\% Processor Time", 0, &hCounter);
-		PdhStatusCheck(8, pdhStatus);
-
-		pdhStatus = (*pPdhCollectQueryData)(hQuery);
-		PdhStatusCheck(9, pdhStatus);
-	}
-#endif
 
 	return dResult;
 }

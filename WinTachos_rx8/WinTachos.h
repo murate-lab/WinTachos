@@ -10,6 +10,7 @@
 #include "resource.h"
 #include "pdh.h"
 #include "pdhmsg.h"
+#pragma comment(lib, "pdh.lib")
 
 #define VERSION					2.00				// バージョン
 #define COLORKEY				RGB(1, 0, 1)		// Layered window transparency key
@@ -36,8 +37,6 @@
 HINSTANCE		hInst;							// 現在のインスタンス
 TCHAR			szTitle[MAX_LOADSTRING];		// タイトル バー テキスト
 TCHAR			szWindowClass[MAX_LOADSTRING];	// タイトル バー テキスト
-HMODULE			m_hDLL;							// Pdh.dllのハンドル
-DWORD			m_OS;							// プラットフォームＩＤ
 HRGN			m_hBaseRgn;						// メーターのベースのリージョン
 float			m_fSpeed;						// スピード
 float			m_fSpeedDisp;					// スピード表示値
@@ -88,17 +87,11 @@ void				DrawNeedle(HDC);
 void				DrawDigital(HWND, HDC);
 void				DrawCenterCircle(HDC);
 void				ChangeTopmost(HWND);
-int					GetCPUUsage_95(void);
 double				GetCPUUsage_NT(void);
 void				PdhStatusCheck(int, PDH_STATUS);
 void				ShowReadme(void);
 BOOL				IsExistFile(LPCTSTR);
 void				MakePopupMenu(HWND);
 void				SetInfoToReg(HKEY);
-PDH_STATUS			(FAR WINAPI *pPdhOpenQuery)(LPVOID, DWORD, HQUERY*);
-PDH_STATUS			(FAR WINAPI *pPdhAddCounter)(HQUERY, LPCTSTR, DWORD, HCOUNTER*);
-PDH_STATUS			(FAR WINAPI *pPdhCollectQueryData)(HQUERY);
-PDH_STATUS			(FAR WINAPI *pPdhGetFormattedCounterValue)(HCOUNTER, DWORD, LPDWORD, PPDH_FMT_COUNTERVALUE);
-PDH_STATUS			(FAR WINAPI *pPdhCloseQuery)(HQUERY);
 
 #endif // !defined(AFX_WINTACHOS_H__AA88F7B7_D84D_4D55_BB3D_258AD676D713__INCLUDED_)
