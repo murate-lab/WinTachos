@@ -1,0 +1,226 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+#include "resource.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// ì˙ñ{åÍ resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_JPN)
+#ifdef _WIN32
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+#pragma code_page(932)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_WINTACHOS           ICON                    "WinTachos.ICO"
+IDI_SMALL               ICON                    "SMALL.ICO"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDC_RCLKMENU MENU 
+BEGIN
+    POPUP "PopupMenu"
+    BEGIN
+        MENUITEM "ê›íË(&S)",                    32772
+        MENUITEM "ê›íËÇèâä˙ílÇ…ñﬂÇ∑(&R)",      ID_MENUITEM_SETTINGRESET
+        MENUITEM " ﬁ∞ºﬁÆ›èÓïÒ(&V)",             ID_MENUITEM_VERSION
+        MENUITEM SEPARATOR
+        MENUITEM "èIóπ(&X)",                    ID_MENUITEM_EXIT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDC_WINTACHOS ACCELERATORS 
+BEGIN
+    "?",            IDM_ABOUT,              ASCII,  ALT
+    "/",            IDM_ABOUT,              ASCII,  ALT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 155, 87
+STYLE DS_SETFONT | DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
+CAPTION " ﬁ∞ºﬁÆ›èÓïÒ"
+FONT 9, "ÇlÇr ÇoÉSÉVÉbÉN", 0, 0, 0x0
+BEGIN
+    ICON            IDI_WINTACHOS,IDC_MYICON,15,10,20,20
+    LTEXT           "WinTachos Version x.xx",IDC_STATIC_VERSION,40,10,85,8,
+                    SS_NOPREFIX
+    LTEXT           "Copyright (C) 2001 - 2026 T.Murate",IDC_STATIC,40,20,
+                    110,8
+    DEFPUSHBUTTON   "OK",IDOK,55,63,45,15,WS_GROUP
+    LTEXT           "https://github.com/murate-lab",IDC_STATIC_URL,40,45,83,8,
+                    SS_NOTIFY
+    LTEXT           "",IDC_STATIC_MAIL,40,35,46,8,SS_NOTIFY
+END
+
+IDD_SETTING DIALOGEX 0, 0, 126, 105
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "ê›íË"
+FONT 9, "ÇlÇr ÇoÉSÉVÉbÉN", 0, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,12,84,48,14
+    PUSHBUTTON      "∑¨›æŸ",IDCANCEL,66,84,48,14
+    CONTROL         "èÌÇ…éËëOÇ…ï\é¶(&T)",IDC_SETTING_TOPMOST,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,6,75,15
+    LTEXT           "ëÂÇ´Ç≥(&S):",IDC_STATIC,12,24,30,15,SS_CENTERIMAGE
+    COMBOBOX        IDC_SETTING_SIZE,42,24,45,68,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "çXêVä‘äu(&U):",IDC_STATIC,12,42,40,15,SS_CENTERIMAGE
+    EDITTEXT        IDC_SETTING_TIMERELAPSE,54,42,25,12,ES_RIGHT | ES_NUMBER
+    LTEXT           "ms",IDC_STATIC,84,42,15,15,SS_CENTERIMAGE
+    LTEXT           "⁄ΩŒﬂ›Ω(&R):",IDC_STATIC,12,60,36,15,SS_CENTERIMAGE
+    EDITTEXT        IDC_SETTING_RESPONSE,48,60,25,12,ES_RIGHT | ES_NUMBER
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+2 TEXTINCLUDE 
+BEGIN
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""resource.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_METER_H             BITMAP                  "meter_h.bmp"
+IDB_METER_L             BITMAP                  "meter_l.bmp"
+IDB_METER_N             BITMAP                  "meter_n.bmp"
+IDB_METER_S             BITMAP                  "meter_s.bmp"
+IDB_METER_T             BITMAP                  "meter_t.bmp"
+IDB_REGION_H            BITMAP                  "meter_rgn_h.bmp"
+IDB_REGION_L            BITMAP                  "meter_rgn_l.bmp"
+IDB_REGION_N            BITMAP                  "meter_rgn_n.bmp"
+IDB_REGION_S            BITMAP                  "meter_rgn_s.bmp"
+IDB_REGION_T            BITMAP                  "meter_rgn_t.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 85
+    END
+
+    IDD_SETTING, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 119
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 98
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_SETTING DLGINIT
+BEGIN
+    IDC_SETTING_SIZE, 0x403, 6, 0
+0x614c, 0x6772, 0x0065, 
+    IDC_SETTING_SIZE, 0x403, 7, 0
+0x6f4e, 0x6d72, 0x6c61, "\000" 
+    IDC_SETTING_SIZE, 0x403, 6, 0
+0x6d53, 0x6c61, 0x006c, 
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Cursor
+//
+
+IDC_HANDP               CURSOR                  "cursor1.cur"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_APP_TITLE           "WinTachos"
+    IDC_WINTACHOS           "WINTACHOS"
+END
+
+#endif    // ì˙ñ{åÍ resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

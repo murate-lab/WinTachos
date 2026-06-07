@@ -1,0 +1,205 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SccProjectName />
+    <SccLocalPath />
+    <ProjectGuid>{212F45BB-DCA2-ABD4-A5D4-5565BD4B13A4}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Release\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Debug\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_SE3P;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PrecompiledHeaderOutputFile>.\Release/WinTachos.pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>.\Release/</AssemblerListingLocation>
+      <ObjectFileName>.\Release/</ObjectFileName>
+      <ProgramDataBaseFileName>.\Release/</ProgramDataBaseFileName>
+      <WarningLevel>Level4</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/MACHINE:I386 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>odbc32.lib;odbccp32.lib;pdh.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>.\Release/WinTachos.exe</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <ProgramDatabaseFile>.\Release/WinTachos.pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+    <Midl>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetEnvironment>Win32</TargetEnvironment>
+      <TypeLibraryName>.\Release/WinTachos.tlb</TypeLibraryName>
+    </Midl>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0411</Culture>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_SE3P;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PrecompiledHeaderOutputFile>.\Debug/WinTachos.pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>.\Debug/</AssemblerListingLocation>
+      <ObjectFileName>.\Debug/</ObjectFileName>
+      <ProgramDataBaseFileName>.\Debug/</ProgramDataBaseFileName>
+      <WarningLevel>Level4</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/MACHINE:I386 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>odbc32.lib;odbccp32.lib;msimg32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>.\Debug/WinTachos.exe</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>.\Debug/WinTachos.pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+    <Midl>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetEnvironment>Win32</TargetEnvironment>
+      <TypeLibraryName>.\Debug/WinTachos.tlb</TypeLibraryName>
+    </Midl>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0411</Culture>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="7seg_h_0.bmp" />
+    <None Include="7seg_h_1.bmp" />
+    <None Include="7seg_h_2.bmp" />
+    <None Include="7seg_h_3.bmp" />
+    <None Include="7seg_h_4.bmp" />
+    <None Include="7seg_h_5.bmp" />
+    <None Include="7seg_h_6.bmp" />
+    <None Include="7seg_h_7.bmp" />
+    <None Include="7seg_h_8.bmp" />
+    <None Include="7seg_h_9.bmp" />
+    <None Include="7seg_h_m.bmp" />
+    <None Include="7seg_l_0.bmp" />
+    <None Include="7seg_l_1.bmp" />
+    <None Include="7seg_l_2.bmp" />
+    <None Include="7seg_l_3.bmp" />
+    <None Include="7seg_l_4.bmp" />
+    <None Include="7seg_l_5.bmp" />
+    <None Include="7seg_l_6.bmp" />
+    <None Include="7seg_l_7.bmp" />
+    <None Include="7seg_l_8.bmp" />
+    <None Include="7seg_l_9.bmp" />
+    <None Include="7seg_l_m.bmp" />
+    <None Include="7seg_n_0.bmp" />
+    <None Include="7seg_n_1.bmp" />
+    <None Include="7seg_n_2.bmp" />
+    <None Include="7seg_n_3.bmp" />
+    <None Include="7seg_n_4.bmp" />
+    <None Include="7seg_n_5.bmp" />
+    <None Include="7seg_n_6.bmp" />
+    <None Include="7seg_n_7.bmp" />
+    <None Include="7seg_n_8.bmp" />
+    <None Include="7seg_n_9.bmp" />
+    <None Include="7seg_n_m.bmp" />
+    <None Include="7seg_s_0.bmp" />
+    <None Include="7seg_s_1.bmp" />
+    <None Include="7seg_s_2.bmp" />
+    <None Include="7seg_s_3.bmp" />
+    <None Include="7seg_s_4.bmp" />
+    <None Include="7seg_s_5.bmp" />
+    <None Include="7seg_s_6.bmp" />
+    <None Include="7seg_s_7.bmp" />
+    <None Include="7seg_s_8.bmp" />
+    <None Include="7seg_s_9.bmp" />
+    <None Include="7seg_s_m.bmp" />
+    <None Include="7seg_t_0.bmp" />
+    <None Include="7seg_t_1.bmp" />
+    <None Include="7seg_t_2.bmp" />
+    <None Include="7seg_t_3.bmp" />
+    <None Include="7seg_t_4.bmp" />
+    <None Include="7seg_t_5.bmp" />
+    <None Include="7seg_t_6.bmp" />
+    <None Include="7seg_t_7.bmp" />
+    <None Include="7seg_t_8.bmp" />
+    <None Include="7seg_t_9.bmp" />
+    <None Include="7seg_t_m.bmp" />
+    <None Include="cursor1.cur" />
+    <None Include="meter_h.bmp" />
+    <None Include="meter_l.bmp" />
+    <None Include="meter_n.bmp" />
+    <None Include="meter_rgn_h.bmp" />
+    <None Include="meter_rgn_l.bmp" />
+    <None Include="meter_rgn_n.bmp" />
+    <None Include="meter_rgn_s.bmp" />
+    <None Include="meter_rgn_t.bmp" />
+    <None Include="meter_s.bmp" />
+    <None Include="meter_t.bmp" />
+    <None Include="small.ico" />
+    <None Include="WinTachos.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="StdAfx.h" />
+    <ClInclude Include="WinTachos.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="StdAfx.cpp" />
+    <ClCompile Include="WinTachos.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="WinTachos.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
