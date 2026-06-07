@@ -200,13 +200,13 @@ BOOL InitInstance( HINSTANCE hInstance, int nCmdShow )
 	switch (osv.dwPlatformId) {
 		case VER_PLATFORM_WIN32s:
 			//MessageBox(NULL, "Win32s", "Platform", MB_OK);
-			MessageBox(NULL, "サポート外のＯＳです", "ｴﾗｰ", MB_OK);
+			MessageBox(NULL, "サポート外のＯＳです", "WinTachos", MB_OK);
 			exit(-1);
 			break;
 		case VER_PLATFORM_WIN32_WINDOWS:
 			//MessageBox(NULL, "Windows95", "Platform", MB_OK);
 			//GetCPUUsageStart_95();
-			//MessageBox(NULL, "サポート外のＯＳです", "ｴﾗｰ", MB_OK);
+			//MessageBox(NULL, "サポート外のＯＳです", "WinTachos", MB_OK);
 			//MessageBox(NULL, "Windows95,98,Meでは針の表示でゴミが残ります。\n原因は調査中です。", "WinTachos Ver1.20", MB_OK);
 			//exit(-1);
 			break;
@@ -214,38 +214,38 @@ BOOL InitInstance( HINSTANCE hInstance, int nCmdShow )
 			//MessageBox(NULL, "WindowsNT", "Platform", MB_OK);
 			m_hDLL = ::LoadLibrary("Pdh.dll");
 			if (!m_hDLL) {	// DLLが見つからない
-				MessageBox(NULL, "Pdh.dllが見つかりませんでした", "ｴﾗｰ", MB_OK);
+				MessageBox(NULL, "Pdh.dllが見つかりませんでした", "WinTachos", MB_OK);
 				exit(-1);
 			} else {	// DLLが見つかった
 				pPdhOpenQuery = (PDH_STATUS (FAR WINAPI *)(LPVOID, DWORD, HQUERY*))GetProcAddress(m_hDLL, "PdhOpenQuery");
 				if (!pPdhOpenQuery) {
-					MessageBox(NULL, "関数ポインタの取得に失敗しました(PdhOpenQuery)", "ｴﾗｰ", MB_OK);
+					MessageBox(NULL, "関数ポインタの取得に失敗しました(PdhOpenQuery)", "WinTachos", MB_OK);
 					exit(-1);
 				}
 				pPdhAddCounter = (PDH_STATUS (FAR WINAPI *)(HQUERY, LPCTSTR, DWORD, HCOUNTER*))GetProcAddress(m_hDLL, "PdhAddCounterA");
 				if (!pPdhAddCounter) {
-					MessageBox(NULL, "関数ポインタの取得に失敗しました(PdhAddCounterA)", "ｴﾗｰ", MB_OK);
+					MessageBox(NULL, "関数ポインタの取得に失敗しました(PdhAddCounterA)", "WinTachos", MB_OK);
 					exit(-1);
 				}
 				pPdhCollectQueryData = (PDH_STATUS (FAR WINAPI *)(HQUERY))GetProcAddress(m_hDLL, "PdhCollectQueryData");
 				if (!pPdhCollectQueryData) {
-					MessageBox(NULL, "関数ポインタの取得に失敗しました(PdhCollectQueryData)", "ｴﾗｰ", MB_OK);
+					MessageBox(NULL, "関数ポインタの取得に失敗しました(PdhCollectQueryData)", "WinTachos", MB_OK);
 					exit(-1);
 				}
 				pPdhGetFormattedCounterValue = (PDH_STATUS (FAR WINAPI *)(HCOUNTER, DWORD, LPDWORD, PPDH_FMT_COUNTERVALUE))GetProcAddress(m_hDLL, "PdhGetFormattedCounterValue");
 				if (!pPdhGetFormattedCounterValue) {
-					MessageBox(NULL, "関数ポインタの取得に失敗しました(PdhGetFormattedCounterValue)", "ｴﾗｰ", MB_OK);
+					MessageBox(NULL, "関数ポインタの取得に失敗しました(PdhGetFormattedCounterValue)", "WinTachos", MB_OK);
 					exit(-1);
 				}
 				pPdhCloseQuery = (PDH_STATUS (FAR WINAPI *)(HQUERY))GetProcAddress(m_hDLL, "PdhCloseQuery");
 				if (!pPdhCloseQuery) {
-					MessageBox(NULL, "関数ポインタの取得に失敗しました(PdhCloseQuery)", "ｴﾗｰ", MB_OK);
+					MessageBox(NULL, "関数ポインタの取得に失敗しました(PdhCloseQuery)", "WinTachos", MB_OK);
 					exit(-1);
 				}
 			}
 			break;
 		default:
-			MessageBox(NULL, "サポート外のＯＳです", "ｴﾗｰ", MB_OK);
+			MessageBox(NULL, "サポート外のＯＳです", "WinTachos", MB_OK);
 			exit(-1);
 			break;
 	}
@@ -581,7 +581,7 @@ LRESULT CALLBACK SettingDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				SendMessage(GetDlgItem(hDlg, IDC_SETTING_TIMERELAPSE), WM_GETTEXT, (WPARAM)10, (WPARAM)cEditBox);
 				sscanf_s(cEditBox, "%d", &iEditBox);
 				if (iEditBox < 10 || iEditBox > 10000) {
-					MessageBox(NULL, "更新間隔は10～10000の値を入力して下さい。", "ｴﾗｰ", MB_OK);
+					MessageBox(NULL, "更新間隔は10～10000の値を入力して下さい。", "WinTachos", MB_OK);
 					break;
 				}
 				m_SettingInfo.uiTimerElapse = iEditBox;
@@ -590,7 +590,7 @@ LRESULT CALLBACK SettingDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				SendMessage(GetDlgItem(hDlg, IDC_SETTING_RESPONSE), WM_GETTEXT, (WPARAM)10, (WPARAM)cEditBox);
 				sscanf_s(cEditBox, "%d", &iEditBox);
 				if (iEditBox < 1 || iEditBox > 200) {
-					MessageBox(NULL, "ﾚｽﾎﾟﾝｽは1～200の値を入力して下さい。", "ｴﾗｰ", MB_OK);
+					MessageBox(NULL, "レスポンスは1～200の値を入力して下さい。", "WinTachos", MB_OK);
 					break;
 				}
 				m_SettingInfo.uiResponse = iEditBox;
@@ -1353,7 +1353,7 @@ void PdhStatusCheck(int i, PDH_STATUS pdhStatus)
 			break;
 		}
 
-		MessageBox(NULL, errorMes, "ｴﾗｰ", MB_OK);
+		MessageBox(NULL, errorMes, "WinTachos", MB_OK);
 
 		delete errorMes;
 	}
@@ -1368,7 +1368,7 @@ void ShowReadme(void)
 		CreateProcess(NULL, "notepad ReadMe.txt", NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS, NULL, NULL, &siStartInfo, &piProcInfo);
 		CloseHandle(piProcInfo.hProcess);
 	} else {
-		MessageBox(NULL, "ReadMe.txtが見つかりません", "ｴﾗｰ", MB_OK);
+		MessageBox(NULL, "ReadMe.txtが見つかりません", "WinTachos", MB_OK);
 	}
 }
 
