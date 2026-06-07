@@ -767,6 +767,8 @@ void ShowMyBMP(HWND hWnd, HDC hdc)
 		hBitmap = NULL;
 		break;
 	}
+	if (!hBitmap)
+		return;
 	GetObject(hBitmap, sizeof(BITMAP), &bmp);
 	BMP_W = (int)bmp.bmWidth;
 	BMP_H = (int)bmp.bmHeight;
@@ -856,7 +858,7 @@ void UpdateSize(HWND hWnd)
 
 void DrawNeedle(HDC hDC)
 {
-	POINT* pNeedle = new POINT[6];
+	POINT pNeedle[6];
 	float fAngle, fAngleC_rad, fAngleR_rad, fAngleL_rad;
 	HPEN pen, oldpen;
 	HBRUSH brush, oldbrush;
@@ -974,7 +976,6 @@ void DrawNeedle(HDC hDC)
 		DeleteObject(brush);
 	}
 
-	delete[] pNeedle;
 }
 
 void DrawDigital(HWND hWnd, HDC hDC)
