@@ -992,96 +992,68 @@ void UpdateSize(HWND hWnd)
 
 void DrawNeedle(HDC hDC)
 {
+	// 先端・末端に肩点を追加した8点1ポリゴン
+	// P(perp, fwd): 回転中心を原点とするローカル座標 → スクリーン座標
+	// perp=垂直右方向, fwd=針先端方向(正=先端側, 負=末端側)
+
 	Gdiplus::Graphics graphics(hDC);
 	graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
 
-	Gdiplus::Point pNeedle[6];
-	float fAngle, fAngleC_rad, fAngleR_rad, fAngleL_rad;
-
-	float fNeedleWidth = (float)(5 - ((m_SettingInfo.uiSize==3)?2:m_SettingInfo.uiSize));
-
+	float W = (float)(5 - ((m_SettingInfo.uiSize==3)?2:m_SettingInfo.uiSize));
 	Gdiplus::SolidBrush black(Gdiplus::Color(255, 0, 0, 0));
 	COLORREF nc = NEEDLE_COLOR;
 	Gdiplus::SolidBrush needleColor(Gdiplus::Color(255, GetRValue(nc), GetGValue(nc), GetBValue(nc)));
 
-	for (int i = 1; i < 2; i++) {	// i:1 タコメーター
+	for (int i = 1; i < 2; i++) {
+		float fAngle = m_NeedleInfo[i].fMinR
+			- (m_fTachoDisp / 100.0f) * (m_NeedleInfo[i].fMinR - m_NeedleInfo[i].fMaxR);
+		float fAngleC_rad = 6.283185308f / (360.0f / fAngle);
+		float fAngleR_rad = 6.283185308f / (360.0f / (fAngle - 90.0f));
 
-		// メータの針の角度計算
-		switch (i) {
-		case 0:
-			fAngle = m_NeedleInfo[i].fMinR - (m_fSpeedDisp / 100.0f) * (m_NeedleInfo[i].fMinR - m_NeedleInfo[i].fMaxR);
-			break;
-		case 1:
-			fAngle = m_NeedleInfo[i].fMinR - (m_fTachoDisp / 100.0f) * (m_NeedleInfo[i].fMinR - m_NeedleInfo[i].fMaxR);
-			break;
-		default:
-			fAngle = m_NeedleInfo[i].fMinR;
-			break;
-		}
-		fAngleC_rad = 6.283185308f / (360.0f / fAngle);
-		fAngleR_rad = 6.283185308f / (360.0f / (fAngle - 90.0f));
-		fAngleL_rad = 6.283185308f / (360.0f / (fAngle + 90.0f));
+		float cC = (float)cos(fAngleC_rad), sC = (float)sin(fAngleC_rad);
+		float cR = (float)cos(fAngleR_rad), sR = (float)sin(fAngleR_rad);
+		float cx = (float)m_NeedleInfo[i].poCenter.x;
+		float cy = (float)m_NeedleInfo[i].poCenter.y;
+		float Lf = (float)m_NeedleInfo[i].uiLeng;
+		float Lb = (float)m_NeedleInfo[i].uiLengB;
 
-		// 針の先端・根元の座標計算（根元はcenter原点 — サークルが背面なので針でcenter～先端を全覆）
-		pNeedle[0].X = m_NeedleInfo[i].poCenter.x + (INT)(m_NeedleInfo[i].uiLeng * cos(fAngleC_rad));
-		pNeedle[0].Y = m_NeedleInfo[i].poCenter.y - (INT)(m_NeedleInfo[i].uiLeng * sin(fAngleC_rad));
-		pNeedle[1].X = m_NeedleInfo[i].poCenter.x;
-		pNeedle[1].Y = m_NeedleInfo[i].poCenter.y;
+		// 肩点パラメータ: 先端/末端から肩点までの距離と半幅
+		float tipSh = 10.0f, tipSW = W * 0.45f;
+		float talSh =  8.0f, talSW = W * 0.45f;
+		float bodyW = W * 0.7f;   // 中心部（最太部）を細く
 
-		// 針のポリゴン座標計算（中身）
-		pNeedle[2].X = pNeedle[1].X + (INT)(fNeedleWidth * cos(fAngleR_rad));
-		pNeedle[2].Y = pNeedle[1].Y - (INT)(fNeedleWidth * sin(fAngleR_rad));
-		pNeedle[3].X = pNeedle[1].X + (INT)(fNeedleWidth * cos(fAngleL_rad));
-		pNeedle[3].Y = pNeedle[1].Y - (INT)(fNeedleWidth * sin(fAngleL_rad));
-		pNeedle[4].X = pNeedle[0].X + (INT)(1.0f * cos(fAngleL_rad));
-		pNeedle[4].Y = pNeedle[0].Y - (INT)(1.0f * sin(fAngleL_rad));
-		pNeedle[5].X = pNeedle[0].X + (INT)(1.0f * cos(fAngleR_rad));
-		pNeedle[5].Y = pNeedle[0].Y - (INT)(1.0f * sin(fAngleR_rad));
+#define P(p,f) Gdiplus::PointF(cx+(p)*cR+(f)*cC, cy-(p)*sR-(f)*sC)
 
-		// 針の背景ポリゴン
-		Gdiplus::Point bgNeedle[4];
-		float bgW = fNeedleWidth + 2.0f;
-		bgNeedle[0].X = pNeedle[1].X + (INT)(bgW * cos(fAngleR_rad));
-		bgNeedle[0].Y = pNeedle[1].Y - (INT)(bgW * sin(fAngleR_rad));
-		bgNeedle[1].X = pNeedle[1].X + (INT)(bgW * cos(fAngleL_rad));
-		bgNeedle[1].Y = pNeedle[1].Y - (INT)(bgW * sin(fAngleL_rad));
-		bgNeedle[2].X = pNeedle[0].X + (INT)(3.0f * cos(fAngleL_rad));
-		bgNeedle[2].Y = pNeedle[0].Y - (INT)(3.0f * sin(fAngleL_rad));
-		bgNeedle[3].X = pNeedle[0].X + (INT)(3.0f * cos(fAngleR_rad));
-		bgNeedle[3].Y = pNeedle[0].Y - (INT)(3.0f * sin(fAngleR_rad));
-		graphics.FillPolygon(&black, bgNeedle, 4);
+		float bW = bodyW + 2.0f, bTSW = tipSW + 1.5f, bLSW = talSW + 1.5f;
 
-		// 針描画
-		graphics.FillPolygon(&needleColor, &pNeedle[2], 4);
+		// 背景 8点 (時計回り: 先端頂点→肩右→本体右→尾肩右→末端頂点→尾肩左→本体左→肩左)
+		Gdiplus::PointF bgNeedle[8] = {
+			P( 0,      Lf + 2),
+			P( bTSW,   Lf - tipSh + 1),
+			P( bW,     0),
+			P( bLSW,   -(Lb - talSh + 1)),
+			P( 0,      -(Lb + 2)),
+			P(-bLSW,   -(Lb - talSh + 1)),
+			P(-bW,     0),
+			P(-bTSW,   Lf - tipSh + 1),
+		};
+		graphics.FillPolygon(&black, bgNeedle, 8);
 
-		// 針の反対側の座標計算
-		pNeedle[0].X = m_NeedleInfo[i].poCenter.x + (INT)(-m_NeedleInfo[i].uiLengB * cos(fAngleC_rad));
-		pNeedle[0].Y = m_NeedleInfo[i].poCenter.y - (INT)(-m_NeedleInfo[i].uiLengB * sin(fAngleC_rad));
-		pNeedle[2].X = m_NeedleInfo[i].poCenter.x + (INT)(fNeedleWidth * cos(fAngleL_rad));
-		pNeedle[2].Y = m_NeedleInfo[i].poCenter.y - (INT)(fNeedleWidth * sin(fAngleL_rad));
-		pNeedle[3].X = m_NeedleInfo[i].poCenter.x + (INT)(fNeedleWidth * cos(fAngleR_rad));
-		pNeedle[3].Y = m_NeedleInfo[i].poCenter.y - (INT)(fNeedleWidth * sin(fAngleR_rad));
-		pNeedle[4].X = pNeedle[0].X + (INT)(1.0f * cos(fAngleR_rad));
-		pNeedle[4].Y = pNeedle[0].Y - (INT)(1.0f * sin(fAngleR_rad));
-		pNeedle[5].X = pNeedle[0].X + (INT)(1.0f * cos(fAngleL_rad));
-		pNeedle[5].Y = pNeedle[0].Y - (INT)(1.0f * sin(fAngleL_rad));
+		// 針本体 8点
+		Gdiplus::PointF ndNeedle[8] = {
+			P( 0,      Lf),
+			P( tipSW,  Lf - tipSh),
+			P( bodyW,  0),
+			P( talSW,  -(Lb - talSh)),
+			P( 0,      -Lb),
+			P(-talSW,  -(Lb - talSh)),
+			P(-bodyW,  0),
+			P(-tipSW,  Lf - tipSh),
+		};
+		graphics.FillPolygon(&needleColor, ndNeedle, 8);
 
-		// 針の反対側の背景
-		Gdiplus::Point bgTail[4];
-		bgTail[0].X = m_NeedleInfo[i].poCenter.x + (INT)(bgW * cos(fAngleL_rad));
-		bgTail[0].Y = m_NeedleInfo[i].poCenter.y - (INT)(bgW * sin(fAngleL_rad));
-		bgTail[1].X = m_NeedleInfo[i].poCenter.x + (INT)(bgW * cos(fAngleR_rad));
-		bgTail[1].Y = m_NeedleInfo[i].poCenter.y - (INT)(bgW * sin(fAngleR_rad));
-		bgTail[2].X = pNeedle[0].X + (INT)(3.0f * cos(fAngleR_rad));
-		bgTail[2].Y = pNeedle[0].Y - (INT)(3.0f * sin(fAngleR_rad));
-		bgTail[3].X = pNeedle[0].X + (INT)(3.0f * cos(fAngleL_rad));
-		bgTail[3].Y = pNeedle[0].Y - (INT)(3.0f * sin(fAngleL_rad));
-		graphics.FillPolygon(&black, bgTail, 4);
-
-		// 針の反対側描画
-		graphics.FillPolygon(&needleColor, &pNeedle[2], 4);
+#undef P
 	}
-
 }
 
 void DrawDigital(HWND hWnd, HDC hDC)
