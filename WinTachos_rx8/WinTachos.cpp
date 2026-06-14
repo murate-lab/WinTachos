@@ -22,6 +22,9 @@ WNDPROC			oldLinkProc2 = NULL;			// メールのリンク
 HFONT			hFontLink;
 HCURSOR			hCurHand;						// リンクカーソル
 ULONG_PTR		gdiplusToken;
+BYTE*			g_alphaMask = NULL;
+int				g_maskW     = 0;
+int				g_maskH     = 0;
 
 int APIENTRY WinMain(HINSTANCE hInstance,
 					 HINSTANCE hPrevInstance,
@@ -183,7 +186,6 @@ BOOL InitInstance( HINSTANCE hInstance, int nCmdShow )
 
 	// タスクバーを表示しない
 	SetWindowLongPtr(hWnd, GWL_EXSTYLE, WS_EX_TOOLWINDOW | WS_EX_LAYERED);
-	SetLayeredWindowAttributes(hWnd, COLORKEY, 0, LWA_COLORKEY);
 
 	// タスクトレイにアイコンを表示
 	m_lpni = new NOTIFYICONDATA;
@@ -264,10 +266,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case WM_PAINT:
 			{
 				hdc = BeginPaint(hWnd, &ps);
-
-				// TODO: この位置に描画用のコードを追加してください...
-				MeterDraw(hWnd, hdc);
-
+				MeterDraw(hWnd);
 				EndPaint(hWnd, &ps);
 				break;
 			}
@@ -294,7 +293,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				//m_fTacho = (float)((int)m_fTacho % 100);
 				// タコメーター動作チェック用
 
-				InvalidateRect(hWnd, NULL, FALSE);
+				MeterDraw(hWnd);
 				SetTimer(hWnd, TIMERID, m_SettingInfo.uiTimerElapse, NULL);
 
 				break;
@@ -320,6 +319,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 				delete[] m_NeedleInfo;
 				m_NeedleInfo = NULL;
+
+				delete[] g_alphaMask;
+				g_alphaMask = NULL;
 
 				Gdiplus::GdiplusShutdown(gdiplusToken);
 
@@ -726,33 +728,131 @@ HRGN CreateRgnFromBmp(HBITMAP hBitmap, COLORREF cTransparentColor = 0xffffffff)
 	return hRgn;
 }
 
-void MeterDraw(HWND hWnd, HDC hdc)
+void BuildAlphaMask(HBITMAP hBmp, int wndW, int wndH)
 {
-	HDC hMemDC;
-	HBITMAP hMemBmp;
-	HBITMAP hOldBmp;
+	BITMAP bmpInfo;
+	GetObject(hBmp, sizeof(BITMAP), &bmpInfo);
+	int bmpW = bmpInfo.bmWidth;
+	int bmpH = bmpInfo.bmHeight;
+
+	BITMAPINFO bmi = {};
+	bmi.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
+	bmi.bmiHeader.biWidth       = bmpW;
+	bmi.bmiHeader.biHeight      = bmpH;	// bottom-up
+	bmi.bmiHeader.biPlanes      = 1;
+	bmi.bmiHeader.biBitCount    = 32;
+	bmi.bmiHeader.biCompression = BI_RGB;
+
+	DWORD* src = new DWORD[bmpW * bmpH]();
+	HDC hdc = GetDC(NULL);
+	GetDIBits(hdc, hBmp, 0, bmpH, src, &bmi, DIB_RGB_COLORS);
+	ReleaseDC(NULL, hdc);
+
+	delete[] g_alphaMask;
+	g_maskW = wndW;
+	g_maskH = wndH;
+	BYTE* bin        = new BYTE[wndW * wndH]();
+	g_alphaMask      = new BYTE[wndW * wndH]();
+
+	int useW = min(wndW, bmpW);
+	int useH = min(wndH, bmpH);
+	for (int y = 0; y < useH; y++) {
+		for (int x = 0; x < useW; x++) {
+			DWORD p = src[(bmpH - 1 - y) * bmpW + x];	// bottom-up反転
+			bin[y * wndW + x] = ((p & 0x00FFFFFF) != 0) ? 255 : 0;
+		}
+	}
+	delete[] src;
+
+	// エッジ補間: 8近傍の内側ピクセル数でアルファを決定
+	for (int y = 0; y < wndH; y++) {
+		for (int x = 0; x < wndW; x++) {
+			int n = 0;
+			for (int dy = -1; dy <= 1; dy++) {
+				for (int dx = -1; dx <= 1; dx++) {
+					if (dx == 0 && dy == 0) continue;
+					int nx = x + dx, ny = y + dy;
+					if (nx >= 0 && nx < wndW && ny >= 0 && ny < wndH)
+						if (bin[ny * wndW + nx] == 255) n++;
+				}
+			}
+			g_alphaMask[y * wndW + x] = (BYTE)(n * 255 / 8);
+		}
+	}
+	delete[] bin;
+}
+
+void MeterDraw(HWND hWnd)
+{
 	RECT rctWnd;
-
 	GetClientRect(hWnd, &rctWnd);
-	hMemDC = CreateCompatibleDC(hdc);
-	hMemBmp = CreateCompatibleBitmap(hdc, rctWnd.right, rctWnd.bottom);
-	hOldBmp = (HBITMAP)SelectObject(hMemDC, hMemBmp);
+	int wndW = rctWnd.right;
+	int wndH = rctWnd.bottom;
+	if (wndW <= 0 || wndH <= 0) return;
 
-	HBRUSH hKeyBrush = CreateSolidBrush(COLORKEY);
-	FillRect(hMemDC, &rctWnd, hKeyBrush);
-	DeleteObject(hKeyBrush);
-	SelectClipRgn(hMemDC, m_hBaseRgn);
-	ShowMyBMP(hWnd, hMemDC);	// メーター描画
-	DrawDigital(hWnd, hMemDC);	// デジタルメーター描画（クリップ内で描画してSRCPAINTのアーティファクトを防ぐ）
-	SelectClipRgn(hMemDC, NULL);
+	// 32bit ARGB DIBセクション生成
+	BITMAPINFO bmi = {};
+	bmi.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
+	bmi.bmiHeader.biWidth       = wndW;
+	bmi.bmiHeader.biHeight      = -wndH;	// top-down
+	bmi.bmiHeader.biPlanes      = 1;
+	bmi.bmiHeader.biBitCount    = 32;
+	bmi.bmiHeader.biCompression = BI_RGB;
 
-	DrawNeedle(hMemDC);			// 針描画
-	DrawCenterCircle(hMemDC);	// 中心軸描画
+	BYTE* pBits = NULL;
+	HDC hMemDC = CreateCompatibleDC(NULL);
+	HBITMAP hDib = CreateDIBSection(NULL, &bmi, DIB_RGB_COLORS, (void**)&pBits, NULL, 0);
+	if (!hDib) { DeleteDC(hMemDC); return; }
+	HBITMAP hOldBmp = (HBITMAP)SelectObject(hMemDC, hDib);
 
-	BitBlt(hdc, 0, 0, rctWnd.right, rctWnd.bottom, hMemDC, 0, 0, SRCCOPY);
+	// 透明でクリア
+	memset(pBits, 0, wndW * wndH * 4);
+
+	// メーター・デジタル・針・中心軸を描画（GDIはアルファバイト=0のまま）
+	ShowMyBMP(hWnd, hMemDC);
+	DrawDigital(hWnd, hMemDC);
+	DrawNeedle(hMemDC);
+	DrawCenterCircle(hMemDC);
+
+	// アルファマスク適用 + 事前乗算
+	// リージョンビットマップは目盛り輪郭のみ非ゼロ（ダイヤル面の黒は透明が意図）。
+	// マスク外でも描画内容 (RGB≠0) があるピクセル（針等）は不透明にする。
+	if (g_alphaMask && g_maskW == wndW && g_maskH == wndH) {
+		DWORD* pixels = (DWORD*)pBits;
+		for (int i = 0; i < wndW * wndH; i++) {
+			BYTE maskA  = g_alphaMask[i];
+			BYTE existA = (pixels[i] >> 24) & 0xFF;
+			BYTE b =  pixels[i]        & 0xFF;
+			BYTE g = (pixels[i] >>  8) & 0xFF;
+			BYTE r = (pixels[i] >> 16) & 0xFF;
+			BYTE a;
+			if (existA > 0) {
+				// GDI+がアルファを書いた場合（AAエッジ等）はそちらを優先
+				a = (existA > maskA) ? existA : maskA;
+			} else {
+				// GDI描画（アルファ=0のまま） — マスク外でも内容があれば不透明
+				a = (maskA > 0) ? maskA : ((r | g | b) ? 255 : 0);
+			}
+			pixels[i] = ((DWORD)a              << 24)
+					  | ((DWORD)(r * a / 255)  << 16)
+					  | ((DWORD)(g * a / 255)  <<  8)
+					  |  (DWORD)(b * a / 255);
+		}
+	}
+
+	// UpdateLayeredWindow でデスクトップに合成
+	HDC hdcScreen = GetDC(NULL);
+	RECT rctScreen;
+	GetWindowRect(hWnd, &rctScreen);
+	POINT ptSrc  = { 0, 0 };
+	POINT ptDst  = { rctScreen.left, rctScreen.top };
+	SIZE  szWnd  = { wndW, wndH };
+	BLENDFUNCTION blend = { AC_SRC_OVER, 0, 255, AC_SRC_ALPHA };
+	UpdateLayeredWindow(hWnd, hdcScreen, &ptDst, &szWnd, hMemDC, &ptSrc, 0, &blend, ULW_ALPHA);
+	ReleaseDC(NULL, hdcScreen);
 
 	SelectObject(hMemDC, hOldBmp);
-	DeleteObject(hMemBmp);
+	DeleteObject(hDib);
 	DeleteDC(hMemDC);
 }
 
@@ -869,6 +969,23 @@ void UpdateSize(HWND hWnd)
 	// ビットマップからリージョンを作成
 	if (m_hBaseRgn) DeleteObject(m_hBaseRgn);
 	m_hBaseRgn = CreateRgnFromBmp(hBitmap, RGB(0, 0, 0));	// 透過色：黒
+	BuildAlphaMask(hBitmap, (int)(WINDOWSZ_X * fScale), (int)(WINDOWSZ_Y * fScale));
+	// 中心軸は黒（RGB=0）で描かれるためマスクで透明化される → 円領域を明示的に255にする
+	if (g_alphaMask) {
+		for (int i = 1; i < 2; i++) {
+			int cx = m_NeedleInfo[i].poCenter.x;
+			int cy = m_NeedleInfo[i].poCenter.y;
+			int r  = m_NeedleInfo[i].uiCenterR;
+			if (r <= 0) continue;
+			for (int y = cy - r; y <= cy + r; y++) {
+				for (int x = cx - r; x <= cx + r; x++) {
+					int dx = x - cx, dy = y - cy;
+					if (dx*dx + dy*dy <= r*r && x >= 0 && x < g_maskW && y >= 0 && y < g_maskH)
+						g_alphaMask[y * g_maskW + x] = 255;
+				}
+			}
+		}
+	}
 	// ビットマップを削除
 	DeleteObject(hBitmap);
 }

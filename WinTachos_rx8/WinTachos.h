@@ -61,7 +61,8 @@ LRESULT CALLBACK	AboutDlgProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK	SettingDlgProc(HWND, UINT, WPARAM, LPARAM);
 
 HRGN				CreateRgnFromBmp(HBITMAP, COLORREF);
-void				MeterDraw(HWND, HDC);
+void				MeterDraw(HWND);
+void				BuildAlphaMask(HBITMAP, int, int);
 void				ShowMyBMP(HWND, HDC);
 void				CalcSpTc(void);
 void				UpdateSize(HWND);
