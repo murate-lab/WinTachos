@@ -25,7 +25,7 @@
 	#define WINDOWSZ_Y			300					// サイズHuge時のウィンドウサイズＹ
 	#define TACHOM_CENTER_X		150					// タコメーターの中心座標Ｘ
 	#define TACHOM_CENTER_Y		150					// タコメーターの中心座標Ｙ
-	#define TACHOM_CENTER_R		0					// タコメーターの中心軸の半径
+	#define TACHOM_CENTER_R		20					// タコメーターの中心軸の半径
 	#define TACHOM_LENG			140					// タコメーターの針の長さ
 	#define TACHOM_LENG_B		40					// タコメーターの針の長さ（反対側）
 	#define TACHO_MIN_R			270.0f				// タコメーターの0rpmの位置の角度

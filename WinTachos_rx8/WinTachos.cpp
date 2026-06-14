@@ -808,11 +808,11 @@ void MeterDraw(HWND hWnd)
 	// 透明でクリア
 	memset(pBits, 0, wndW * wndH * 4);
 
-	// メーター・デジタル・針・中心軸を描画（GDIはアルファバイト=0のまま）
+	// メーター・デジタル・サークル・針の順に描画（サークルが針の背面）
 	ShowMyBMP(hWnd, hMemDC);
 	DrawDigital(hWnd, hMemDC);
-	DrawNeedle(hMemDC);
 	DrawCenterCircle(hMemDC);
+	DrawNeedle(hMemDC);
 
 	// アルファマスク適用 + 事前乗算
 	// リージョンビットマップは目盛り輪郭のみ非ゼロ（ダイヤル面の黒は透明が意図）。
@@ -970,13 +970,13 @@ void UpdateSize(HWND hWnd)
 	if (m_hBaseRgn) DeleteObject(m_hBaseRgn);
 	m_hBaseRgn = CreateRgnFromBmp(hBitmap, RGB(0, 0, 0));	// 透過色：黒
 	BuildAlphaMask(hBitmap, (int)(WINDOWSZ_X * fScale), (int)(WINDOWSZ_Y * fScale));
-	// 中心軸は黒（RGB=0）で描かれるためマスクで透明化される → 円領域を明示的に255にする
+	// 中心軸（黒リング + 針色円）の領域をマスクに追加（r+3 = 黒リング2px + AA余裕1px）
 	if (g_alphaMask) {
 		for (int i = 1; i < 2; i++) {
 			int cx = m_NeedleInfo[i].poCenter.x;
 			int cy = m_NeedleInfo[i].poCenter.y;
-			int r  = m_NeedleInfo[i].uiCenterR;
-			if (r <= 0) continue;
+			int r  = m_NeedleInfo[i].uiCenterR + 3;
+			if (r <= 3) continue;
 			for (int y = cy - r; y <= cy + r; y++) {
 				for (int x = cx - r; x <= cx + r; x++) {
 					int dx = x - cx, dy = y - cy;
@@ -998,7 +998,7 @@ void DrawNeedle(HDC hDC)
 	Gdiplus::Point pNeedle[6];
 	float fAngle, fAngleC_rad, fAngleR_rad, fAngleL_rad;
 
-	float fNeedleWidth = (5 - ((m_SettingInfo.uiSize==3)?2:m_SettingInfo.uiSize)) / 2.0f;
+	float fNeedleWidth = (float)(5 - ((m_SettingInfo.uiSize==3)?2:m_SettingInfo.uiSize));
 
 	Gdiplus::SolidBrush black(Gdiplus::Color(255, 0, 0, 0));
 	COLORREF nc = NEEDLE_COLOR;
@@ -1022,11 +1022,11 @@ void DrawNeedle(HDC hDC)
 		fAngleR_rad = 6.283185308f / (360.0f / (fAngle - 90.0f));
 		fAngleL_rad = 6.283185308f / (360.0f / (fAngle + 90.0f));
 
-		// 針の先端・根元の座標計算
+		// 針の先端・根元の座標計算（根元はcenter原点 — サークルが背面なので針でcenter～先端を全覆）
 		pNeedle[0].X = m_NeedleInfo[i].poCenter.x + (INT)(m_NeedleInfo[i].uiLeng * cos(fAngleC_rad));
 		pNeedle[0].Y = m_NeedleInfo[i].poCenter.y - (INT)(m_NeedleInfo[i].uiLeng * sin(fAngleC_rad));
-		pNeedle[1].X = m_NeedleInfo[i].poCenter.x + (INT)(m_NeedleInfo[i].uiCenterR * cos(fAngleC_rad));
-		pNeedle[1].Y = m_NeedleInfo[i].poCenter.y - (INT)(m_NeedleInfo[i].uiCenterR * sin(fAngleC_rad));
+		pNeedle[1].X = m_NeedleInfo[i].poCenter.x;
+		pNeedle[1].Y = m_NeedleInfo[i].poCenter.y;
 
 		// 針のポリゴン座標計算（中身）
 		pNeedle[2].X = pNeedle[1].X + (INT)(fNeedleWidth * cos(fAngleR_rad));
@@ -1140,25 +1140,19 @@ void DrawDigital(HWND hWnd, HDC hDC)
 }
 
 void DrawCenterCircle(HDC hDC)
-{	// 針の中心軸を描画	
-	HPEN pen, oldpen;
-	HBRUSH brush, oldbrush;
+{	// 針の中心軸を描画（黒の塗りつぶし円、針の背面に描画）
+	Gdiplus::Graphics graphics(hDC);
+	graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
 
-	pen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
-	oldpen = (HPEN)SelectObject(hDC, pen);
-	brush = CreateSolidBrush(RGB(0, 0, 0));
-	oldbrush = (HBRUSH)SelectObject(hDC, brush);
+	Gdiplus::SolidBrush black(Gdiplus::Color(255, 0, 0, 0));
 
 	for (int i = 1; i < 2; i++) {
-		Ellipse( hDC,
-			m_NeedleInfo[i].poCenter.x - m_NeedleInfo[i].uiCenterR, m_NeedleInfo[i].poCenter.y - m_NeedleInfo[i].uiCenterR, 
-			m_NeedleInfo[i].poCenter.x + m_NeedleInfo[i].uiCenterR, m_NeedleInfo[i].poCenter.y + m_NeedleInfo[i].uiCenterR );
+		float cx = (float)m_NeedleInfo[i].poCenter.x;
+		float cy = (float)m_NeedleInfo[i].poCenter.y;
+		float r  = (float)m_NeedleInfo[i].uiCenterR;
+		if (r <= 0) continue;
+		graphics.FillEllipse(&black, cx - r, cy - r, r * 2.0f, r * 2.0f);
 	}
-
-	SelectObject(hDC, oldpen);
-	SelectObject(hDC, oldbrush);
-	DeleteObject(pen);
-	DeleteObject(brush);
 }
 
 void ChangeTopmost(HWND hWnd)
