@@ -1024,7 +1024,7 @@ void DrawNeedle(HDC hDC)
 
 #define P(p,f) Gdiplus::PointF(cx+(p)*cR+(f)*cC, cy-(p)*sR-(f)*sC)
 
-		float bW = bodyW + 2.0f, bTSW = tipSW + 1.5f, bLSW = talSW + 1.5f;
+		float bW = W + 2.0f, bTSW = tipSW + 1.5f, bLSW = talSW + 1.5f;
 
 		// 背景 8点 (時計回り: 先端頂点→肩右→本体右→尾肩右→末端頂点→尾肩左→本体左→肩左)
 		Gdiplus::PointF bgNeedle[8] = {
@@ -1101,9 +1101,53 @@ void DrawDigital(HWND hWnd, HDC hDC)
 		BMP_H = (int)bmp.bmHeight;
 		hmdc = CreateCompatibleDC(hDC);
 		SelectObject(hmdc, hBitmap);
-		BitBlt(hDC, (234 - (int)(m_SettingInfo.uiSize * 46.6f)) - (26 - m_SettingInfo.uiSize * 5) * iDigit,
-			        157 - (int)(m_SettingInfo.uiSize * 31.5f),
-					BMP_W, BMP_H, hmdc, 0, 0, SRCPAINT);
+
+		// 7segビットマップの背景色(32,32,32)はパネル枠デザインの一部だが、
+		// パネル外にはみ出す角丸部分でゴミピクセルが発生するため、
+		// 暗い背景ピクセル(≤40)を純黒に置換してからSRCPAINTする。
+		// (純黒はSRCPAINTで「透明」扱い: 0|dest = dest、描画先を変更しない)
+		{
+			BITMAPINFO bmiTmp = {};
+			bmiTmp.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
+			bmiTmp.bmiHeader.biWidth       = BMP_W;
+			bmiTmp.bmiHeader.biHeight      = -BMP_H;  // top-down
+			bmiTmp.bmiHeader.biPlanes      = 1;
+			bmiTmp.bmiHeader.biBitCount    = 24;
+			bmiTmp.bmiHeader.biCompression = BI_RGB;
+			BYTE* pTmpBits = NULL;
+			HBITMAP hTmpDib = CreateDIBSection(NULL, &bmiTmp, DIB_RGB_COLORS,
+			                                   (void**)&pTmpBits, NULL, 0);
+			if (hTmpDib) {
+				HDC hTmpDC = CreateCompatibleDC(NULL);
+				HBITMAP hTmpOld = (HBITMAP)SelectObject(hTmpDC, hTmpDib);
+				BitBlt(hTmpDC, 0, 0, BMP_W, BMP_H, hmdc, 0, 0, SRCCOPY);
+
+				int stride = (BMP_W * 3 + 3) & ~3;
+				for (int row = 0; row < BMP_H; row++) {
+					BYTE* p = pTmpBits + row * stride;
+					for (int col = 0; col < BMP_W; col++, p += 3) {
+						if (p[0] <= 40 && p[1] <= 40 && p[2] <= 40)
+							p[0] = p[1] = p[2] = 0;
+					}
+				}
+
+				int destX = (234 - (int)(m_SettingInfo.uiSize * 46.6f))
+				            - (26 - m_SettingInfo.uiSize * 5) * iDigit;
+				int destY = 157 - (int)(m_SettingInfo.uiSize * 31.5f);
+				BitBlt(hDC, destX, destY, BMP_W, BMP_H, hTmpDC, 0, 0, SRCPAINT);
+
+				SelectObject(hTmpDC, hTmpOld);
+				DeleteDC(hTmpDC);
+				DeleteObject(hTmpDib);
+			} else {
+				// フォールバック: 処理なしで直接SRCPAINT
+				int destX = (234 - (int)(m_SettingInfo.uiSize * 46.6f))
+				            - (26 - m_SettingInfo.uiSize * 5) * iDigit;
+				int destY = 157 - (int)(m_SettingInfo.uiSize * 31.5f);
+				BitBlt(hDC, destX, destY, BMP_W, BMP_H, hmdc, 0, 0, SRCPAINT);
+			}
+		}
+
 		DeleteDC(hmdc);
 		DeleteObject(hBitmap);
 	}
