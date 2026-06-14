@@ -1092,25 +1092,18 @@ void DrawNeedle(HDC hDC)
 }
 
 void DrawCenterCircle(HDC hDC)
-{	// 針の中心軸を描画	
-	HPEN pen, oldpen;
-	HBRUSH brush, oldbrush;
-
-	pen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
-	oldpen = (HPEN)SelectObject(hDC, pen);
-	brush = CreateSolidBrush(RGB(0, 0, 0));
-	oldbrush = (HBRUSH)SelectObject(hDC, brush);
+{	// 針の中心軸を描画（GDI+ アンチエイリアス）
+	Gdiplus::Graphics graphics(hDC);
+	graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+	Gdiplus::SolidBrush black(Gdiplus::Color(255, 0, 0, 0));
 
 	for (int i = 0; i < 2; i++) {
-		Ellipse( hDC,
-			m_NeedleInfo[i].poCenter.x - m_NeedleInfo[i].uiCenterR, m_NeedleInfo[i].poCenter.y - m_NeedleInfo[i].uiCenterR, 
-			m_NeedleInfo[i].poCenter.x + m_NeedleInfo[i].uiCenterR, m_NeedleInfo[i].poCenter.y + m_NeedleInfo[i].uiCenterR );
+		float cx = (float)m_NeedleInfo[i].poCenter.x;
+		float cy = (float)m_NeedleInfo[i].poCenter.y;
+		float r  = (float)m_NeedleInfo[i].uiCenterR;
+		if (r <= 0) continue;
+		graphics.FillEllipse(&black, cx - r, cy - r, r * 2.0f, r * 2.0f);
 	}
-
-	SelectObject(hDC, oldpen);
-	SelectObject(hDC, oldbrush);
-	DeleteObject(pen);
-	DeleteObject(brush);
 }
 
 void ChangeTopmost(HWND hWnd)
