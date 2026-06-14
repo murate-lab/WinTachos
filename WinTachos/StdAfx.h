@@ -24,6 +24,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <process.h>
+#include <objidl.h>
+#include <gdiplus.h>
+#pragma comment(lib, "gdiplus.lib")
 
 // ローカル ヘッダー ファイル
 

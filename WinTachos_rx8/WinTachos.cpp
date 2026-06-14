@@ -21,6 +21,7 @@ WNDPROC			oldLinkProc1 = NULL;			// ＵＲＬのリンク
 WNDPROC			oldLinkProc2 = NULL;			// メールのリンク
 HFONT			hFontLink;
 HCURSOR			hCurHand;						// リンクカーソル
+ULONG_PTR		gdiplusToken;
 
 int APIENTRY WinMain(HINSTANCE hInstance,
 					 HINSTANCE hPrevInstance,
@@ -277,6 +278,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 				SetTimer(hWnd, TIMERID, m_SettingInfo.uiTimerElapse, NULL);
 
+				Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+				Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+
 				break;
 			}
 
@@ -316,6 +320,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 				delete[] m_NeedleInfo;
 				m_NeedleInfo = NULL;
+
+				Gdiplus::GdiplusShutdown(gdiplusToken);
 
 				PostQuitMessage( 0 );
 				break;
@@ -869,14 +875,19 @@ void UpdateSize(HWND hWnd)
 
 void DrawNeedle(HDC hDC)
 {
-	POINT pNeedle[6];
+	Gdiplus::Graphics graphics(hDC);
+	graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+
+	Gdiplus::Point pNeedle[6];
 	float fAngle, fAngleC_rad, fAngleR_rad, fAngleL_rad;
-	HPEN pen, oldpen;
-	HBRUSH brush, oldbrush;
 
 	float fNeedleWidth = (5 - ((m_SettingInfo.uiSize==3)?2:m_SettingInfo.uiSize)) / 2.0f;
 
-	for (int i = 1; i < 2; i++) {	// i:0 スピードメーター  i:1 タコメーター
+	Gdiplus::SolidBrush black(Gdiplus::Color(255, 0, 0, 0));
+	COLORREF nc = NEEDLE_COLOR;
+	Gdiplus::SolidBrush needleColor(Gdiplus::Color(255, GetRValue(nc), GetGValue(nc), GetBValue(nc)));
+
+	for (int i = 1; i < 2; i++) {	// i:1 タコメーター
 
 		// メータの針の角度計算
 		switch (i) {
@@ -894,97 +905,64 @@ void DrawNeedle(HDC hDC)
 		fAngleR_rad = 6.283185308f / (360.0f / (fAngle - 90.0f));
 		fAngleL_rad = 6.283185308f / (360.0f / (fAngle + 90.0f));
 
-		// スピードメーターの針の先端の座標計算
-		pNeedle[0].x = m_NeedleInfo[i].poCenter.x + (long)(m_NeedleInfo[i].uiLeng * cos(fAngleC_rad));
-		pNeedle[0].y = m_NeedleInfo[i].poCenter.y - (long)(m_NeedleInfo[i].uiLeng * sin(fAngleC_rad));
-		// スピードメーターの針の根元の座標計算
-		pNeedle[1].x = m_NeedleInfo[i].poCenter.x + (long)(m_NeedleInfo[i].uiCenterR * cos(fAngleC_rad));
-		pNeedle[1].y = m_NeedleInfo[i].poCenter.y - (long)(m_NeedleInfo[i].uiCenterR * sin(fAngleC_rad));
+		// 針の先端・根元の座標計算
+		pNeedle[0].X = m_NeedleInfo[i].poCenter.x + (INT)(m_NeedleInfo[i].uiLeng * cos(fAngleC_rad));
+		pNeedle[0].Y = m_NeedleInfo[i].poCenter.y - (INT)(m_NeedleInfo[i].uiLeng * sin(fAngleC_rad));
+		pNeedle[1].X = m_NeedleInfo[i].poCenter.x + (INT)(m_NeedleInfo[i].uiCenterR * cos(fAngleC_rad));
+		pNeedle[1].Y = m_NeedleInfo[i].poCenter.y - (INT)(m_NeedleInfo[i].uiCenterR * sin(fAngleC_rad));
 
-		// スピードメーターの針のポリゴンの座標計算（中身）
-		pNeedle[2].x = pNeedle[1].x + (long)(fNeedleWidth * cos(fAngleR_rad));
-		pNeedle[2].y = pNeedle[1].y - (long)(fNeedleWidth * sin(fAngleR_rad));
-		pNeedle[3].x = pNeedle[1].x + (long)(fNeedleWidth * cos(fAngleL_rad));
-		pNeedle[3].y = pNeedle[1].y - (long)(fNeedleWidth * sin(fAngleL_rad));
-		pNeedle[4].x = pNeedle[0].x + (long)(1.0f * cos(fAngleL_rad));
-		pNeedle[4].y = pNeedle[0].y - (long)(1.0f * sin(fAngleL_rad));
-		pNeedle[5].x = pNeedle[0].x + (long)(1.0f * cos(fAngleR_rad));
-		pNeedle[5].y = pNeedle[0].y - (long)(1.0f * sin(fAngleR_rad));
+		// 針のポリゴン座標計算（中身）
+		pNeedle[2].X = pNeedle[1].X + (INT)(fNeedleWidth * cos(fAngleR_rad));
+		pNeedle[2].Y = pNeedle[1].Y - (INT)(fNeedleWidth * sin(fAngleR_rad));
+		pNeedle[3].X = pNeedle[1].X + (INT)(fNeedleWidth * cos(fAngleL_rad));
+		pNeedle[3].Y = pNeedle[1].Y - (INT)(fNeedleWidth * sin(fAngleL_rad));
+		pNeedle[4].X = pNeedle[0].X + (INT)(1.0f * cos(fAngleL_rad));
+		pNeedle[4].Y = pNeedle[0].Y - (INT)(1.0f * sin(fAngleL_rad));
+		pNeedle[5].X = pNeedle[0].X + (INT)(1.0f * cos(fAngleR_rad));
+		pNeedle[5].Y = pNeedle[0].Y - (INT)(1.0f * sin(fAngleR_rad));
 
-		// スピードメーターの針の背景ポリゴン
-		POINT bgNeedle[4];
+		// 針の背景ポリゴン
+		Gdiplus::Point bgNeedle[4];
 		float bgW = fNeedleWidth + 2.0f;
-		bgNeedle[0].x = pNeedle[1].x + (long)(bgW * cos(fAngleR_rad));
-		bgNeedle[0].y = pNeedle[1].y - (long)(bgW * sin(fAngleR_rad));
-		bgNeedle[1].x = pNeedle[1].x + (long)(bgW * cos(fAngleL_rad));
-		bgNeedle[1].y = pNeedle[1].y - (long)(bgW * sin(fAngleL_rad));
-		bgNeedle[2].x = pNeedle[0].x + (long)(3.0f * cos(fAngleL_rad));
-		bgNeedle[2].y = pNeedle[0].y - (long)(3.0f * sin(fAngleL_rad));
-		bgNeedle[3].x = pNeedle[0].x + (long)(3.0f * cos(fAngleR_rad));
-		bgNeedle[3].y = pNeedle[0].y - (long)(3.0f * sin(fAngleR_rad));
-		pen = CreatePen(PS_NULL, 0, 0);
-		oldpen = (HPEN)SelectObject(hDC, pen);
-		brush = CreateSolidBrush(RGB(0, 0, 0));
-		oldbrush = (HBRUSH)SelectObject(hDC, brush);
-		Polygon(hDC, bgNeedle, 4);
-		SelectObject(hDC, oldpen);
-		SelectObject(hDC, oldbrush);
-		DeleteObject(pen);
-		DeleteObject(brush);
+		bgNeedle[0].X = pNeedle[1].X + (INT)(bgW * cos(fAngleR_rad));
+		bgNeedle[0].Y = pNeedle[1].Y - (INT)(bgW * sin(fAngleR_rad));
+		bgNeedle[1].X = pNeedle[1].X + (INT)(bgW * cos(fAngleL_rad));
+		bgNeedle[1].Y = pNeedle[1].Y - (INT)(bgW * sin(fAngleL_rad));
+		bgNeedle[2].X = pNeedle[0].X + (INT)(3.0f * cos(fAngleL_rad));
+		bgNeedle[2].Y = pNeedle[0].Y - (INT)(3.0f * sin(fAngleL_rad));
+		bgNeedle[3].X = pNeedle[0].X + (INT)(3.0f * cos(fAngleR_rad));
+		bgNeedle[3].Y = pNeedle[0].Y - (INT)(3.0f * sin(fAngleR_rad));
+		graphics.FillPolygon(&black, bgNeedle, 4);
 
 		// 針描画
-		pen = CreatePen(PS_SOLID, 1, NEEDLE_COLOR);
-		oldpen = (HPEN)SelectObject(hDC, pen);
-		brush = CreateSolidBrush(NEEDLE_COLOR);
-		oldbrush = (HBRUSH)SelectObject(hDC, brush);
-		Polygon(hDC, &pNeedle[2], 4);
-		SelectObject(hDC, oldpen);
-		SelectObject(hDC, oldbrush);
-		DeleteObject(pen);
-		DeleteObject(brush);
+		graphics.FillPolygon(&needleColor, &pNeedle[2], 4);
 
 		// 針の反対側の座標計算
-		pNeedle[0].x = m_NeedleInfo[i].poCenter.x + (long)(-m_NeedleInfo[i].uiLengB * cos(fAngleC_rad));
-		pNeedle[0].y = m_NeedleInfo[i].poCenter.y - (long)(-m_NeedleInfo[i].uiLengB * sin(fAngleC_rad));
-		pNeedle[2].x = m_NeedleInfo[i].poCenter.x + (long)(fNeedleWidth * cos(fAngleL_rad));
-		pNeedle[2].y = m_NeedleInfo[i].poCenter.y - (long)(fNeedleWidth * sin(fAngleL_rad));
-		pNeedle[3].x = m_NeedleInfo[i].poCenter.x + (long)(fNeedleWidth * cos(fAngleR_rad));
-		pNeedle[3].y = m_NeedleInfo[i].poCenter.y - (long)(fNeedleWidth * sin(fAngleR_rad));
-		pNeedle[4].x = pNeedle[0].x + (long)(1.0f * cos(fAngleR_rad));
-		pNeedle[4].y = pNeedle[0].y - (long)(1.0f * sin(fAngleR_rad));
-		pNeedle[5].x = pNeedle[0].x + (long)(1.0f * cos(fAngleL_rad));
-		pNeedle[5].y = pNeedle[0].y - (long)(1.0f * sin(fAngleL_rad));
+		pNeedle[0].X = m_NeedleInfo[i].poCenter.x + (INT)(-m_NeedleInfo[i].uiLengB * cos(fAngleC_rad));
+		pNeedle[0].Y = m_NeedleInfo[i].poCenter.y - (INT)(-m_NeedleInfo[i].uiLengB * sin(fAngleC_rad));
+		pNeedle[2].X = m_NeedleInfo[i].poCenter.x + (INT)(fNeedleWidth * cos(fAngleL_rad));
+		pNeedle[2].Y = m_NeedleInfo[i].poCenter.y - (INT)(fNeedleWidth * sin(fAngleL_rad));
+		pNeedle[3].X = m_NeedleInfo[i].poCenter.x + (INT)(fNeedleWidth * cos(fAngleR_rad));
+		pNeedle[3].Y = m_NeedleInfo[i].poCenter.y - (INT)(fNeedleWidth * sin(fAngleR_rad));
+		pNeedle[4].X = pNeedle[0].X + (INT)(1.0f * cos(fAngleR_rad));
+		pNeedle[4].Y = pNeedle[0].Y - (INT)(1.0f * sin(fAngleR_rad));
+		pNeedle[5].X = pNeedle[0].X + (INT)(1.0f * cos(fAngleL_rad));
+		pNeedle[5].Y = pNeedle[0].Y - (INT)(1.0f * sin(fAngleL_rad));
 
-		// 針の反対側の背景描画
-		POINT bgTail[4];
-		bgTail[0].x = m_NeedleInfo[i].poCenter.x + (long)(bgW * cos(fAngleL_rad));
-		bgTail[0].y = m_NeedleInfo[i].poCenter.y - (long)(bgW * sin(fAngleL_rad));
-		bgTail[1].x = m_NeedleInfo[i].poCenter.x + (long)(bgW * cos(fAngleR_rad));
-		bgTail[1].y = m_NeedleInfo[i].poCenter.y - (long)(bgW * sin(fAngleR_rad));
-		bgTail[2].x = pNeedle[0].x + (long)(3.0f * cos(fAngleR_rad));
-		bgTail[2].y = pNeedle[0].y - (long)(3.0f * sin(fAngleR_rad));
-		bgTail[3].x = pNeedle[0].x + (long)(3.0f * cos(fAngleL_rad));
-		bgTail[3].y = pNeedle[0].y - (long)(3.0f * sin(fAngleL_rad));
-		pen = CreatePen(PS_NULL, 0, 0);
-		oldpen = (HPEN)SelectObject(hDC, pen);
-		brush = CreateSolidBrush(RGB(0, 0, 0));
-		oldbrush = (HBRUSH)SelectObject(hDC, brush);
-		Polygon(hDC, bgTail, 4);
-		SelectObject(hDC, oldpen);
-		SelectObject(hDC, oldbrush);
-		DeleteObject(pen);
-		DeleteObject(brush);
+		// 針の反対側の背景
+		Gdiplus::Point bgTail[4];
+		bgTail[0].X = m_NeedleInfo[i].poCenter.x + (INT)(bgW * cos(fAngleL_rad));
+		bgTail[0].Y = m_NeedleInfo[i].poCenter.y - (INT)(bgW * sin(fAngleL_rad));
+		bgTail[1].X = m_NeedleInfo[i].poCenter.x + (INT)(bgW * cos(fAngleR_rad));
+		bgTail[1].Y = m_NeedleInfo[i].poCenter.y - (INT)(bgW * sin(fAngleR_rad));
+		bgTail[2].X = pNeedle[0].X + (INT)(3.0f * cos(fAngleR_rad));
+		bgTail[2].Y = pNeedle[0].Y - (INT)(3.0f * sin(fAngleR_rad));
+		bgTail[3].X = pNeedle[0].X + (INT)(3.0f * cos(fAngleL_rad));
+		bgTail[3].Y = pNeedle[0].Y - (INT)(3.0f * sin(fAngleL_rad));
+		graphics.FillPolygon(&black, bgTail, 4);
 
 		// 針の反対側描画
-		pen = CreatePen(PS_SOLID, 1, NEEDLE_COLOR);
-		oldpen = (HPEN)SelectObject(hDC, pen);
-		brush = CreateSolidBrush(NEEDLE_COLOR);
-		oldbrush = (HBRUSH)SelectObject(hDC, brush);
-		Polygon(hDC, &pNeedle[2], 4);
-		SelectObject(hDC, oldpen);
-		SelectObject(hDC, oldbrush);
-		DeleteObject(pen);
-		DeleteObject(brush);
+		graphics.FillPolygon(&needleColor, &pNeedle[2], 4);
 	}
 
 }
