@@ -1005,7 +1005,7 @@ void DrawNeedle(HDC hDC)
 	Gdiplus::Point pNeedle[6];
 	float fAngle, fAngleC_rad, fAngleR_rad, fAngleL_rad;
 
-	float fNeedleWidth = (5 - ((m_SettingInfo.uiSize==3)?2:m_SettingInfo.uiSize)) / 2.0f;
+	float fNeedleWidth = (5 - ((m_SettingInfo.uiSize==3)?2:m_SettingInfo.uiSize)) / 1.5f;
 
 	Gdiplus::SolidBrush black(Gdiplus::Color(255, 0, 0, 0));
 	COLORREF nc = NEEDLE_COLOR;
@@ -1051,10 +1051,10 @@ void DrawNeedle(HDC hDC)
 		pNeedle[2].Y = pNeedle[1].Y - (INT)(fNeedleWidth * sin(fAngleR_rad));
 		pNeedle[3].X = pNeedle[1].X + (INT)(fNeedleWidth * cos(fAngleL_rad));
 		pNeedle[3].Y = pNeedle[1].Y - (INT)(fNeedleWidth * sin(fAngleL_rad));
-		pNeedle[4].X = pNeedle[0].X + (INT)(1.0f * cos(fAngleL_rad));
-		pNeedle[4].Y = pNeedle[0].Y - (INT)(1.0f * sin(fAngleL_rad));
-		pNeedle[5].X = pNeedle[0].X + (INT)(1.0f * cos(fAngleR_rad));
-		pNeedle[5].Y = pNeedle[0].Y - (INT)(1.0f * sin(fAngleR_rad));
+		pNeedle[4].X = pNeedle[0].X + (INT)(1.5f * cos(fAngleL_rad));
+		pNeedle[4].Y = pNeedle[0].Y - (INT)(1.5f * sin(fAngleL_rad));
+		pNeedle[5].X = pNeedle[0].X + (INT)(1.5f * cos(fAngleR_rad));
+		pNeedle[5].Y = pNeedle[0].Y - (INT)(1.5f * sin(fAngleR_rad));
 
 		// 針の背景ポリゴン
 		Gdiplus::Point bgNeedle[4];
